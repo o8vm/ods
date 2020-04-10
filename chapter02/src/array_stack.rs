@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
     buf: Box<[Option<T>]>,
     len: usize,
