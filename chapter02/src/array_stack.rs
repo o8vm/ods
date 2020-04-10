@@ -23,7 +23,7 @@ impl<T> Array<T> {
         }
     }
 
-    pub fn allocate_in_heap(size: usize) -> Box<[Option<T>]> {
+    fn allocate_in_heap(size: usize) -> Box<[Option<T>]> {
         std::iter::repeat_with(Default::default)
             .take(size)
             .collect::<Vec<_>>()
@@ -71,15 +71,14 @@ impl<T> Array<T> {
         value
     }
 
-    pub fn resize(&mut self) {
+    fn resize(&mut self) {
         if self.capacity() == 0 {
             self.buf = Self::allocate_in_heap(1);
         } else {
-            let n = self.len();
-            let new_buf = Self::allocate_in_heap(n * 2);
+            let new_buf = Self::allocate_in_heap(self.len * 2);
             let old_buf = std::mem::replace(&mut self.buf, new_buf);
 
-            for (i, elem) in old_buf.into_vec().into_iter().enumerate().take(n) {
+            for (i, elem) in old_buf.into_vec().into_iter().enumerate().take(self.len) {
                 self.buf[i] = elem;
             }
         }
