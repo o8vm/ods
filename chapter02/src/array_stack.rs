@@ -62,13 +62,17 @@ impl<T> Array<T> {
     }
 
     pub fn remove(&mut self, index: usize) -> Option<T> {
-        let value = self.buf[index].take();
-        self.buf[index..self.len].rotate_left(1);
-        self.len -= 1;
-        if self.capacity() >= 3 * self.len() {
-            self.resize();
+        if index < self.len {
+            let value = self.buf[index].take();
+            self.buf[index..self.len].rotate_left(1);
+            self.len -= 1;
+            if self.capacity() >= 3 * self.len() {
+                self.resize();
+            }
+            value
+        } else {
+            None
         }
-        value
     }
 
     fn resize(&mut self) {
