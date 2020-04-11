@@ -6,7 +6,7 @@ pub struct Array<T> {
     back: ArrayStack<T>,
 }
 
-impl<T: std::fmt::Debug> Array<T> {
+impl<T> Array<T> {
     pub fn new() -> Self {
         Self {
             front: ArrayStack::new(),
@@ -56,8 +56,7 @@ impl<T: std::fmt::Debug> Array<T> {
 
     pub fn balance(&mut self) {
         if 3 * self.front.len() < self.back.len() || 3 * self.back.len() < self.front.len() {
-            let flen = self.front.len();
-            let n = flen + self.back.len();
+            let n = self.front.len() + self.back.len();
             let nf = n / 2;
             let nb = n - nf;
             let mut af: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nf, 1));
