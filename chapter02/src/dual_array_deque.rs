@@ -63,18 +63,16 @@ impl<T: std::fmt::Debug> Array<T> {
             let mut af: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nf, 1));
             let mut bf: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nb, 1));
             for i in 0..nf {
-                    af.add(nf - i - 1, self.remove(0).unwrap());
+                af.add(nf - i - 1, self.remove(0).unwrap());
             }
             for i in 0..nb {
                 bf.add(i, self.remove(0).unwrap());
             }
             std::mem::replace(&mut self.front, af);
             std::mem::replace(&mut self.back, bf);
-
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {
