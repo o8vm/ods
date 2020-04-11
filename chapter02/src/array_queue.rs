@@ -36,7 +36,7 @@ impl<T> Array<T> {
         if self.len == self.capacity() {
             self.resize();
         }
-        self.buf[(self.ndx+self.len)%self.capacity()] = Some(value);
+        self.buf[(self.ndx + self.len) % self.capacity()] = Some(value);
         self.len += 1;
     }
 
@@ -57,7 +57,7 @@ impl<T> Array<T> {
             let new_buf = Self::allocate_in_heap(self.len * 2);
             let mut old_buf = std::mem::replace(&mut self.buf, new_buf);
             for k in 0..self.len {
-                self.buf[k] = old_buf[(self.ndx+k)%old_buf.len()].take();
+                self.buf[k] = old_buf[(self.ndx + k) % old_buf.len()].take();
             }
         }
         self.ndx = 0;
@@ -82,5 +82,4 @@ mod test {
         assert_eq!(array_queue.remove(), Some('D'));
         assert_eq!(array_queue.remove(), Some('E'));
     }
-
 }
