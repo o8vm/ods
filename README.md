@@ -10,3 +10,4 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter2
     * ArrayStack
     * ArrayQueue
+    * ArrayDeque
