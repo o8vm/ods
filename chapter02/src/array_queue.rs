@@ -1,15 +1,14 @@
+use chapter01::interface::Queue;
+
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
     buf: Box<[Option<T>]>,
-    ndx: usize,
+    ddx: usize,
     len: usize,
 }
 
 impl<T> Array<T> {
-    pub fn len(&self) -> usize {
-        self.len
-    }
-    pub fn capacity(&self) -> usize {
+    pub fn length(&self) -> usize {
         self.buf.len()
     }
 
@@ -20,66 +19,72 @@ impl<T> Array<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             buf: Self::allocate_in_heap(capacity),
-            ndx: 0,
+            ddx: 0,
             len: 0,
         }
     }
 
-    pub fn allocate_in_heap(size: usize) -> Box<[Option<T>]> {
+    fn allocate_in_heap(size: usize) -> Box<[Option<T>]> {
         std::iter::repeat_with(Default::default)
             .take(size)
             .collect::<Vec<_>>()
             .into_boxed_slice()
     }
 
-    pub fn add(&mut self, value: T) {
-        if self.len == self.capacity() {
-            self.resize();
-        }
-        self.buf[(self.ndx + self.len) % self.capacity()] = Some(value);
-        self.len += 1;
-    }
-
-    pub fn remove(&mut self) -> Option<T> {
-        let value = self.buf[self.ndx].take();
-        self.ndx = (self.ndx + 1) % self.capacity();
-        self.len -= 1;
-        if self.capacity() >= 3 * self.len {
-            self.resize();
-        }
-        value
-    }
-
     fn resize(&mut self) {
-        if self.capacity() == 0 {
+        if self.length() == 0 {
             self.buf = Self::allocate_in_heap(1);
         } else {
             let new_buf = Self::allocate_in_heap(self.len * 2);
             let mut old_buf = std::mem::replace(&mut self.buf, new_buf);
             for k in 0..self.len {
-                self.buf[k] = old_buf[(self.ndx + k) % old_buf.len()].take();
+                self.buf[k] = old_buf[(self.ddx + k) % old_buf.len()].take();
             }
         }
-        self.ndx = 0;
+        self.ddx = 0;
+    }
+}
+
+impl<T> Queue<T> for Array<T> {
+    fn add(&mut self, value: T) {
+        if self.len + 1 >= self.length() {
+            self.resize();
+        }
+        self.buf[(self.ddx + self.len) % self.length()] = Some(value);
+        self.len += 1;
+    }
+
+    fn remove(&mut self) -> Option<T> {
+        let value = self.buf[self.ddx].take();
+        self.ddx = (self.ddx + 1) % self.length();
+        self.len -= 1;
+        if self.length() >= 3 * self.len {
+            self.resize();
+        }
+        value
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::Array;
+    use chapter01::interface::Queue;
     #[test]
     fn arrayqueue_add_remove() {
         let mut array_queue: Array<char> = Array::new();
-        assert_eq!(array_queue.len(), 0);
-        array_queue.add('A');
-        array_queue.add('B');
-        assert_eq!(array_queue.remove(), Some('A'));
-        array_queue.add('C');
-        array_queue.add('D');
-        assert_eq!(array_queue.remove(), Some('B'));
-        array_queue.add('E');
-        assert_eq!(array_queue.remove(), Some('C'));
-        assert_eq!(array_queue.remove(), Some('D'));
-        assert_eq!(array_queue.remove(), Some('E'));
+        for elem in "aaabc".chars() {
+            array_queue.add(elem);
+        }
+        assert_eq!(array_queue.remove(), Some('a'));
+        assert_eq!(array_queue.remove(), Some('a'));
+        array_queue.add('d');
+        array_queue.add('e');
+        assert_eq!(array_queue.remove(), Some('a'));
+        array_queue.add('f');
+        array_queue.add('g');
+        assert_eq!(array_queue.length(), 10);
+        array_queue.add('h');
+        assert_eq!(array_queue.remove(), Some('b'));
+        println!("{:?}", array_queue);
     }
 }
