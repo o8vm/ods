@@ -113,8 +113,9 @@ mod test {
         assert_eq!((array_stack.size(), array_stack.length()), (5, 10));
         array_stack.remove(4);
         array_stack.remove(3);
+        array_stack.set(2, 'i');
         assert_eq!((array_stack.size(), array_stack.length()), (3, 6));
-        for (i, elem) in "bre".chars().enumerate() {
+        for (i, elem) in "bri".chars().enumerate() {
             assert_eq!(array_stack.get(i), Some(&elem));
         }
     }
