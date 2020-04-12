@@ -1,6 +1,6 @@
 pub trait Queue<T> {
     fn add(&mut self, value: T);
-    fn remove(&mut self, index: usize) -> Option<T>;
+    fn remove(&mut self) -> Option<T>;
 }
 
 pub trait List<T> {
