@@ -32,14 +32,10 @@ impl<T> Array<T> {
     }
 
     fn resize(&mut self) {
-        if self.length() == 0 {
-            self.buf = Self::allocate_in_heap(1);
-        } else {
-            let new_buf = Self::allocate_in_heap(self.len * 2);
-            let mut old_buf = std::mem::replace(&mut self.buf, new_buf);
-            for k in 0..self.len {
-                self.buf[k] = old_buf[(self.ddx + k) % old_buf.len()].take();
-            }
+        let new_buf = Self::allocate_in_heap(std::cmp::max(self.len * 2, 1));
+        let mut old_buf = std::mem::replace(&mut self.buf, new_buf);
+        for k in 0..self.len {
+            self.buf[k] = old_buf[(self.ddx + k) % old_buf.len()].take();
         }
         self.ddx = 0;
     }
