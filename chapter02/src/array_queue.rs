@@ -70,7 +70,7 @@ mod test {
     use super::Array;
     use chapter01::interface::Queue;
     #[test]
-    fn arrayqueue_add_remove() {
+    fn test_array_stack() {
         let mut array_queue: Array<char> = Array::new();
         for elem in "aaabc".chars() {
             array_queue.add(elem);
