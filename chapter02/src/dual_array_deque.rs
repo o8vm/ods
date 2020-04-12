@@ -1,4 +1,5 @@
 use super::array_stack::Array as ArrayStack;
+use chapter01::interface::List;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
@@ -14,49 +15,9 @@ impl<T> Array<T> {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.front.len() + self.back.len()
-    }
-
-    pub fn get(&self, index: usize) -> Option<&T> {
-        if index < self.front.len() {
-            self.front.get(self.front.len() - index - 1)
-        } else {
-            self.back.get(index - self.front.len())
-        }
-    }
-
-    pub fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if index < self.front.len() {
-            self.front.set(self.front.len() - index - 1, value)
-        } else {
-            self.back.set(index - self.front.len(), value)
-        }
-    }
-
-    pub fn add(&mut self, index: usize, value: T) {
-        if index < self.front.len() {
-            self.front.add(self.front.len() - index, value);
-        } else {
-            self.back.add(index - self.front.len(), value);
-        }
-        self.balance();
-    }
-
-    pub fn remove(&mut self, index: usize) -> Option<T> {
-        let value;
-        if index < self.front.len() {
-            value = self.front.remove(self.front.len() - index - 1);
-        } else {
-            value = self.back.remove(index - self.front.len());
-        }
-        self.balance();
-        value
-    }
-
     pub fn balance(&mut self) {
-        if 3 * self.front.len() < self.back.len() || 3 * self.back.len() < self.front.len() {
-            let n = self.front.len() + self.back.len();
+        if 3 * self.front.size() < self.back.size() || 3 * self.back.size() < self.front.size() {
+            let n = self.front.size() + self.back.size();
             let nf = n / 2;
             let nb = n - nf;
             let mut af: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nf, 1));
@@ -73,13 +34,56 @@ impl<T> Array<T> {
     }
 }
 
+impl<T> List<T> for Array<T> {
+    fn size(&self) -> usize {
+        self.front.size() + self.back.size()
+    }
+
+    fn get(&self, index: usize) -> Option<&T> {
+        if index < self.front.size() {
+            self.front.get(self.front.size() - index - 1)
+        } else {
+            self.back.get(index - self.front.size())
+        }
+    }
+
+    fn set(&mut self, index: usize, value: T) -> Option<T> {
+        if index < self.front.size() {
+            self.front.set(self.front.size() - index - 1, value)
+        } else {
+            self.back.set(index - self.front.size(), value)
+        }
+    }
+
+    fn add(&mut self, index: usize, value: T) {
+        if index < self.front.size() {
+            self.front.add(self.front.size() - index, value);
+        } else {
+            self.back.add(index - self.front.size(), value);
+        }
+        self.balance();
+    }
+
+    fn remove(&mut self, index: usize) -> Option<T> {
+        let value;
+        if index < self.front.size() {
+            value = self.front.remove(self.front.size() - index - 1);
+        } else {
+            value = self.back.remove(index - self.front.size());
+        }
+        self.balance();
+        value
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Array;
+    use chapter01::interface::List;
     #[test]
-    fn dualarraydeque_add_remove() {
+    fn test_dual_array_deque() {
         let mut dual_array_deque: Array<char> = Array::new();
-        assert_eq!(dual_array_deque.len(), 0);
+        assert_eq!(dual_array_deque.size(), 0);
         dual_array_deque.add(0, 'A');
         dual_array_deque.add(1, 'B');
         dual_array_deque.add(2, 'C');
