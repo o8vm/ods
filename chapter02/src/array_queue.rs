@@ -81,6 +81,6 @@ mod test {
         assert_eq!(array_queue.length(), 10);
         array_queue.add('h');
         assert_eq!(array_queue.remove(), Some('b'));
-        println!("{:?}", array_queue);
+        println!("ArrayQueue = {:?}", array_queue);
     }
 }
