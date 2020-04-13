@@ -9,6 +9,7 @@ The following is a list of data structures that have been implemented in Rust.
 
 * chapter01 (Interface)
     * trait Queue
+    * trait Stack
     * trait List
     * trait USet
     * trait SSet
