@@ -48,13 +48,16 @@ impl<T> Array<T> {
     }
 }
 
-impl<T> List<T> for Array<T> {
+impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
         self.len
     }
 
-    fn get(&self, index: usize) -> Option<&T> {
-        self.buf[(self.ddx + index) % self.length()].as_ref()
+    fn get(&self, index: usize) -> Option<T> {
+        match self.buf[(self.ddx + index) % self.length()] {
+            Some(ref value) => Some(value.clone()),
+            None => None,
+        }
     }
 
     fn set(&mut self, index: usize, value: T) -> Option<T> {
@@ -123,14 +126,14 @@ mod test {
         array_deque.add(2, 'c');
         array_deque.add(3, 'd');
         for (i, elem) in "abcd".chars().enumerate() {
-            assert_eq!(array_deque.get(i), Some(&elem));
+            assert_eq!(array_deque.get(i), Some(elem));
         }
         array_deque.add(3, 'x');
         array_deque.add(4, 'y');
         assert_eq!(array_deque.remove(0), Some('a'));
         array_deque.set(3, 'z');
         for (i, elem) in "bcxzd".chars().enumerate() {
-            assert_eq!(array_deque.get(i), Some(&elem));
+            assert_eq!(array_deque.get(i), Some(elem));
         }
         println!("ArrayDeque = {:?}", array_deque);
     }

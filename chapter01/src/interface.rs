@@ -3,9 +3,9 @@ pub trait Queue<T> {
     fn remove(&mut self) -> Option<T>;
 }
 
-pub trait List<T> {
+pub trait List<T: Clone> {
     fn size(&self) -> usize;
-    fn get(&self, index: usize) -> Option<&T>;
+    fn get(&self, index: usize) -> Option<T>;
     fn set(&mut self, index: usize, value: T) -> Option<T>;
     fn add(&mut self, index: usize, value: T);
     fn remove(&mut self, index: usize) -> Option<T>;

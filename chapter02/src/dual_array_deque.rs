@@ -7,7 +7,7 @@ pub struct Array<T> {
     back: ArrayStack<T>,
 }
 
-impl<T> Array<T> {
+impl<T: Clone> Array<T> {
     pub fn new() -> Self {
         Self {
             front: ArrayStack::new(),
@@ -34,12 +34,12 @@ impl<T> Array<T> {
     }
 }
 
-impl<T> List<T> for Array<T> {
+impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
         self.front.size() + self.back.size()
     }
 
-    fn get(&self, index: usize) -> Option<&T> {
+    fn get(&self, index: usize) -> Option<T> {
         if index < self.front.size() {
             self.front.get(self.front.size() - index - 1)
         } else {
@@ -88,20 +88,18 @@ mod test {
         dual_array_deque.add(1, 'B');
         dual_array_deque.add(2, 'C');
         dual_array_deque.add(3, 'D');
-        assert_eq!(dual_array_deque.get(0), Some(&'A'));
-        assert_eq!(dual_array_deque.get(1), Some(&'B'));
-        assert_eq!(dual_array_deque.get(2), Some(&'C'));
-        assert_eq!(dual_array_deque.get(3), Some(&'D'));
+        assert_eq!(dual_array_deque.get(0), Some('A'));
+        assert_eq!(dual_array_deque.get(1), Some('B'));
+        assert_eq!(dual_array_deque.get(2), Some('C'));
+        assert_eq!(dual_array_deque.get(3), Some('D'));
         dual_array_deque.add(3, 'x');
-        println!("{:?}", dual_array_deque);
         dual_array_deque.add(4, 'y');
-        println!("{:?}", dual_array_deque);
         assert_eq!(dual_array_deque.remove(0), Some('A'));
-        println!("{:?}", dual_array_deque);
-        assert_eq!(dual_array_deque.get(0), Some(&'B'));
-        assert_eq!(dual_array_deque.get(1), Some(&'C'));
-        assert_eq!(dual_array_deque.get(2), Some(&'x'));
-        assert_eq!(dual_array_deque.get(3), Some(&'y'));
-        assert_eq!(dual_array_deque.get(4), Some(&'D'));
+        assert_eq!(dual_array_deque.get(0), Some('B'));
+        assert_eq!(dual_array_deque.get(1), Some('C'));
+        assert_eq!(dual_array_deque.get(2), Some('x'));
+        assert_eq!(dual_array_deque.get(3), Some('y'));
+        assert_eq!(dual_array_deque.get(4), Some('D'));
+        println!("DualArrayDeque = {:?}", dual_array_deque);
     }
 }

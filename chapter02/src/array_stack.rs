@@ -38,14 +38,17 @@ impl<T> Array<T> {
     }
 }
 
-impl<T> List<T> for Array<T> {
+impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
         self.len
     }
 
-    fn get(&self, index: usize) -> Option<&T> {
+    fn get(&self, index: usize) -> Option<T> {
         if index < self.len {
-            self.buf[index].as_ref()
+            match self.buf[index] {
+                Some(ref value) => Some(value.clone()),
+                None => None,
+            }
         } else {
             None
         }
@@ -105,7 +108,7 @@ mod test {
         array_stack.add(5, 'r');
         assert_eq!((array_stack.size(), array_stack.length()), (6, 10));
         for (i, elem) in "breedr".chars().enumerate() {
-            assert_eq!(array_stack.get(i), Some(&elem));
+            assert_eq!(array_stack.get(i), Some(elem));
         }
         array_stack.add(5, 'e');
         array_stack.remove(4);
@@ -116,7 +119,8 @@ mod test {
         array_stack.set(2, 'i');
         assert_eq!((array_stack.size(), array_stack.length()), (3, 6));
         for (i, elem) in "bri".chars().enumerate() {
-            assert_eq!(array_stack.get(i), Some(&elem));
+            assert_eq!(array_stack.get(i), Some(elem));
         }
+        println!("ArrayStack = {:?}", array_stack);
     }
 }
