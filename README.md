@@ -7,14 +7,17 @@ Note: *This repository exists for my study. I've read up to 4 chapters and am in
 
 The following is a list of data structures that have been implemented in Rust.
 
-* chapter1 (Interface)
+* chapter01 (Interface)
     * trait Queue
     * trait List
     * trait USet
     * trait SSet
-* chapter2 (Array-Based Lists)
+* chapter02 (Array-Based Lists)
     * ArrayStack
     * ArrayQueue
     * ArrayDeque
     * DualArrayDeque
-    * RootishArrayStack(*coming soon*)
+    * RootishArrayStack
+* chapter03 (Linked Lists)
+    * SLList (*coming soon*)
+    * DLList (*coming soon*)
