@@ -20,5 +20,5 @@ The following is a list of data structures that have been implemented in Rust.
     * DualArrayDeque
     * RootishArrayStack
 * chapter03 (Linked Lists)
-    * SLList (*coming soon*)
+    * SLList
     * DLList (*coming soon*)
