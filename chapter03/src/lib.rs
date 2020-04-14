@@ -1,1 +1,2 @@
-pub mod sl_list;
+pub mod sllist;
+pub mod dllist;
