@@ -82,7 +82,7 @@ impl<T> Queue<T> for SLList<T> {
 #[cfg(test)]
 mod test {
     use super::SLList;
-    use chapter01::interface::{Stack, Queue};
+    use chapter01::interface::{Queue, Stack};
     #[test]
     fn test_sllist() {
         let mut sllist: SLList<char> = SLList::new();
