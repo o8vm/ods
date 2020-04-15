@@ -21,4 +21,5 @@ The following is a list of data structures that have been implemented in Rust.
     * RootishArrayStack
 * chapter03 (Linked Lists)
     * SLList
-    * DLList (*coming soon*)
+    * DLList
+    * SEList (*coming soon*)
