@@ -129,11 +129,11 @@ impl<T: Clone> List<T> for DLList<T> {
 
 #[cfg(test)]
 mod test {
-    use super::{DLList, Node};
+    use super::DLList;
     use chapter01::interface::List;
     #[test]
     fn test_dllist() {
-        let mut dllist: DLList<char> = DLList::new(Node::new('d'), Node::new('d'));
+        let mut dllist: DLList<char> = DLList::new(Default::default(), Default::default());
         assert_eq!(dllist.size(), 0);
         dllist.add(0, 'a');
         dllist.add(1, 'b');
