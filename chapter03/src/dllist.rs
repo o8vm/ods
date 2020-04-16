@@ -1,21 +1,22 @@
 use chapter01::interface::List;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
+type Wink<T> = Option<Weak<RefCell<Node<T>>>>;
 
-#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default)]
 pub struct DLList<T> {
     head: Link<T>,
-    tail: Link<T>,
+    tail: Wink<T>,
     len: usize,
 }
 
-#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default)]
 pub struct Node<T> {
     value: T,
     next: Link<T>,
-    prev: Link<T>,
+    prev: Wink<T>,
 }
 
 impl<T> Node<T> {
@@ -29,12 +30,12 @@ impl<T> Node<T> {
 }
 
 impl<T> DLList<T> {
-    pub fn new(dummy: Rc<RefCell<Node<T>>>) -> Self {
-        dummy.borrow_mut().next = Some(dummy.clone());
-        dummy.borrow_mut().prev = Some(dummy.clone());
+    pub fn new(dummy1: Rc<RefCell<Node<T>>>, dummy2: Rc<RefCell<Node<T>>>) -> Self {
+        dummy1.borrow_mut().next = Some(dummy2.clone());
+        dummy2.borrow_mut().prev = Some(Rc::downgrade(&dummy1));
         Self {
-            head: Some(dummy.clone()),
-            tail: Some(dummy),
+            head: Some(dummy1),
+            tail: Some(Rc::downgrade(&dummy2)),
             len: 0,
         }
     }
@@ -50,9 +51,9 @@ impl<T> DLList<T> {
                 p = p.and_then(|p| p.borrow().next.clone());
             }
         } else {
-            p = self.tail.clone();
+            p = self.tail.clone().and_then(|p| p.upgrade().clone());
             for _j in (index + 1..=self.len).rev() {
-                p = p.and_then(|p| p.borrow().prev.clone());
+                p = p.and_then(|p| p.borrow().prev.clone().and_then(|p| p.upgrade().clone()));
             }
         }
         p
@@ -65,18 +66,23 @@ impl<T> DLList<T> {
         u.borrow_mut()
             .next
             .clone()
-            .map(|p| p.borrow_mut().prev = Some(u.clone()));
-        u.borrow_mut()
-            .prev
-            .clone()
-            .map(|p| p.borrow_mut().next = Some(u.clone()));
+            .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
+        u.borrow_mut().prev.clone().and_then(|p| {
+            p.upgrade()
+                .clone()
+                .map(|p| p.borrow_mut().next = Some(u.clone()))
+        });
         self.len += 1;
     }
 
     fn remove_link(&mut self, w: Link<T>) {
         let prev = w.clone().and_then(|p| p.borrow_mut().prev.take());
         let next = w.and_then(|p| p.borrow_mut().next.take());
-        prev.clone().map(|p| p.borrow_mut().next = next.clone());
+        prev.clone().and_then(|p| {
+            p.upgrade()
+                .clone()
+                .map(|p| p.borrow_mut().next = next.clone())
+        });
         next.map(|p| p.borrow_mut().prev = prev);
         self.len -= 1;
     }
@@ -110,7 +116,7 @@ impl<T: Clone> List<T> for DLList<T> {
 
     fn remove(&mut self, index: usize) -> Option<T> {
         if self.len == 0 {
-            return None
+            return None;
         }
         let w = self.get_link(index);
         self.remove_link(w.clone());
@@ -123,11 +129,11 @@ impl<T: Clone> List<T> for DLList<T> {
 
 #[cfg(test)]
 mod test {
-    use chapter01::interface::List;
     use super::{DLList, Node};
+    use chapter01::interface::List;
     #[test]
     fn test_dllist() {
-        let mut dllist: DLList<char> = DLList::new(Node::new('d'));
+        let mut dllist: DLList<char> = DLList::new(Node::new('d'), Node::new('d'));
         assert_eq!(dllist.size(), 0);
         dllist.add(0, 'a');
         dllist.add(1, 'b');
@@ -144,6 +150,7 @@ mod test {
         assert_eq!(dllist.remove(2), Some('c'));
         dllist.add(2, 'y');
         assert_eq!(dllist.get(2), Some('y'));
+        println!("DLList = {:?}", dllist);
         for elem in "axyde".chars() {
             assert_eq!(dllist.remove(0), Some(elem));
         }
