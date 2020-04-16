@@ -110,7 +110,7 @@ impl<T: Clone> List<T> for DLList<T> {
 
     fn remove(&mut self, index: usize) -> Option<T> {
         if self.len == 0 {
-            return None;
+            return None
         }
         let w = self.get_link(index);
         self.remove_link(w.clone());
@@ -123,8 +123,8 @@ impl<T: Clone> List<T> for DLList<T> {
 
 #[cfg(test)]
 mod test {
-    use super::{DLList, Node};
     use chapter01::interface::List;
+    use super::{DLList, Node};
     #[test]
     fn test_dllist() {
         let mut dllist: DLList<char> = DLList::new(Node::new('d'));
