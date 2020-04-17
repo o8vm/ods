@@ -29,8 +29,10 @@ impl<T> Node<T> {
     }
 }
 
-impl<T> DLList<T> {
-    pub fn new(dummy1: Rc<RefCell<Node<T>>>, dummy2: Rc<RefCell<Node<T>>>) -> Self {
+impl<T: Default> DLList<T> {
+    pub fn new() -> Self {
+        let dummy1: Rc<RefCell<Node<T>>> = Default::default();
+        let dummy2: Rc<RefCell<Node<T>>> = Default::default();
         dummy1.borrow_mut().next = Some(dummy2.clone());
         dummy2.borrow_mut().prev = Some(Rc::downgrade(&dummy1));
         Self {
@@ -88,7 +90,7 @@ impl<T> DLList<T> {
     }
 }
 
-impl<T: Clone> List<T> for DLList<T> {
+impl<T: Clone + Default> List<T> for DLList<T> {
     fn size(&self) -> usize {
         self.len
     }
@@ -133,7 +135,7 @@ mod test {
     use chapter01::interface::List;
     #[test]
     fn test_dllist() {
-        let mut dllist: DLList<char> = DLList::new(Default::default(), Default::default());
+        let mut dllist: DLList<char> = DLList::new();
         assert_eq!(dllist.size(), 0);
         dllist.add(0, 'a');
         dllist.add(1, 'b');
