@@ -3,3 +3,4 @@ pub mod array_queue;
 pub mod array_stack;
 pub mod dual_array_deque;
 pub mod rootish_array_stack;
+pub mod bounded_deque;
