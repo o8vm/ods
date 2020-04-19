@@ -56,6 +56,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn add(&mut self, index: usize, value: T) {
+        assert!(index <= self.len);
         let r = self.blocks.size();
         if r * (r + 1) / 2 < self.len + 1 {
             self.grow();
@@ -68,6 +69,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, index: usize) -> Option<T> {
+        assert!(index < self.len);
         let value = self.get(index);
         for j in index..self.len - 1 {
             self.set(j, self.get(j + 1).unwrap());
