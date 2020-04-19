@@ -48,6 +48,8 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn add(&mut self, index: usize, value: T) {
+        assert!(index <= self.len);
+        assert_ne!(self.length(), self.len);
         if index < self.len / 2 {
             self.ddx = if self.ddx == 0 {
                 self.length() - 1
@@ -71,6 +73,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, index: usize) -> Option<T> {
+        assert!(index < self.len);
         let value = self.buf[(self.ddx + index) % self.length()].take();
         if index < self.len / 2 {
             for k in (1..=index).rev() {
@@ -95,21 +98,24 @@ mod test {
     use chapter01::interface::List;
     #[test]
     fn test_bounded_deque() {
-        let mut array_deque: Array<char> = Array::new(6);
-        array_deque.add(0, 'a');
-        array_deque.add(1, 'b');
-        array_deque.add(2, 'c');
-        array_deque.add(3, 'd');
+        let mut bounded_deque: Array<char> = Array::new(5);
+        bounded_deque.add(0, 'a');
+        bounded_deque.add(1, 'b');
+        bounded_deque.add(2, 'c');
+        bounded_deque.add(3, 'd');
         for (i, elem) in "abcd".chars().enumerate() {
-            assert_eq!(array_deque.get(i), Some(elem));
+            assert_eq!(bounded_deque.get(i), Some(elem));
         }
-        array_deque.add(3, 'x');
-        array_deque.add(4, 'y');
-        assert_eq!(array_deque.remove(0), Some('a'));
-        array_deque.set(3, 'z');
+        bounded_deque.add(3, 'x');
+        bounded_deque.add(4, 'y');
+        assert_eq!(bounded_deque.remove(0), Some('a'));
+        bounded_deque.set(3, 'z');
         for (i, elem) in "bcxzd".chars().enumerate() {
-            assert_eq!(array_deque.get(i), Some(elem));
+            assert_eq!(bounded_deque.get(i), Some(elem));
         }
-        println!("BDeque = {:?}", array_deque);
+        for i in 0..5 {
+            bounded_deque.remove(0);
+        }
+        println!("BDeque = {:?}", bounded_deque);
     }
 }
