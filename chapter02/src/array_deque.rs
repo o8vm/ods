@@ -65,6 +65,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn add(&mut self, index: usize, value: T) {
+        assert!(index <= self.len);
         if self.len == self.length() {
             self.resize();
         }
@@ -92,6 +93,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, index: usize) -> Option<T> {
+        assert!(index < self.len);
         let value = self.buf[(self.ddx + index) % self.length()].take();
         if index < self.len / 2 {
             for k in (1..=index).rev() {
