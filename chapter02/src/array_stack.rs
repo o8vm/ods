@@ -12,10 +12,10 @@ impl<T> Array<T> {
     }
 
     pub fn new() -> Self {
-        Self::with_capacity(0)
+        Self::with_length(0)
     }
 
-    pub fn with_capacity(capacity: usize) -> Self {
+    pub fn with_length(capacity: usize) -> Self {
         Self {
             buf: Self::allocate_in_heap(capacity),
             len: 0,

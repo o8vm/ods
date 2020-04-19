@@ -20,8 +20,8 @@ impl<T: Clone> Array<T> {
             let n = self.front.size() + self.back.size();
             let nf = n / 2;
             let nb = n - nf;
-            let mut af: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nf, 1));
-            let mut bf: ArrayStack<T> = ArrayStack::with_capacity(std::cmp::max(2 * nb, 1));
+            let mut af: ArrayStack<T> = ArrayStack::with_length(std::cmp::max(2 * nf, 1));
+            let mut bf: ArrayStack<T> = ArrayStack::with_length(std::cmp::max(2 * nb, 1));
             for i in 0..nf {
                 af.add(nf - i - 1, self.remove(0).unwrap());
             }
