@@ -113,7 +113,7 @@ mod test {
         for (i, elem) in "bcxzd".chars().enumerate() {
             assert_eq!(bounded_deque.get(i), Some(elem));
         }
-        for i in 0..5 {
+        for _i in 0..5 {
             bounded_deque.remove(0);
         }
         println!("BDeque = {:?}", bounded_deque);
