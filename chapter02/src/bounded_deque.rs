@@ -17,7 +17,7 @@ impl<T> Array<T> {
 
     pub fn new(b: usize) -> Self {
         Self {
-            buf: Self::allocate_in_heap(b + 1),
+            buf: Self::allocate_in_heap(b),
             ddx: 0,
             len: 0,
         }
@@ -106,7 +106,7 @@ mod test {
     use chapter01::interface::List;
     #[test]
     fn test_bounded_deque() {
-        let mut bounded_deque: Array<char> = Array::new(5);
+        let mut bounded_deque: Array<char> = Array::new(6);
         bounded_deque.add(0, 'a');
         bounded_deque.add(1, 'b');
         bounded_deque.add(2, 'c');

@@ -43,7 +43,7 @@ impl<T: Clone> List<T> for Array<T> {
     fn get(&self, index: usize) -> Option<T> {
         let b = Self::i2b(index);
         let j = index - b * (b + 1) / 2;
-        match self.blocks.get(b).unwrap()[j].borrow().as_ref() {
+        match self.blocks.get(b)?[j].borrow().as_ref() {
             Some(value) => Some(value.clone()),
             None => None,
         }
@@ -52,7 +52,7 @@ impl<T: Clone> List<T> for Array<T> {
     fn set(&mut self, index: usize, value: T) -> Option<T> {
         let b = Self::i2b(index);
         let j = index - b * (b + 1) / 2;
-        self.blocks.get(b).unwrap()[j].borrow_mut().replace(value)
+        self.blocks.get(b)?[j].borrow_mut().replace(value)
     }
 
     fn add(&mut self, index: usize, value: T) {
@@ -76,7 +76,7 @@ impl<T: Clone> List<T> for Array<T> {
         }
         let eb = Self::i2b(self.len - 1);
         let ej = self.len - 1 - eb * (eb + 1) / 2;
-        self.blocks.get(eb).unwrap()[ej].borrow_mut().take();
+        self.blocks.get(eb)?[ej].borrow_mut().take();
         self.len -= 1;
         let r = self.blocks.size();
         if (r - 2) * (r - 1) / 2 <= self.len {
