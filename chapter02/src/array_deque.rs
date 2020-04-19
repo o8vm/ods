@@ -54,14 +54,22 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn get(&self, index: usize) -> Option<T> {
-        match self.buf[(self.ddx + index) % self.length()] {
-            Some(ref value) => Some(value.clone()),
-            None => None,
+        if index < self.len {
+            match self.buf[(self.ddx + index) % self.length()] {
+                Some(ref value) => Some(value.clone()),
+                None => None,
+            }
+        } else {
+            None
         }
     }
 
     fn set(&mut self, index: usize, value: T) -> Option<T> {
-        self.buf[(self.ddx + index) % self.length()].replace(value)
+        if index < self.len {
+            self.buf[(self.ddx + index) % self.length()].replace(value)
+        } else {
+            None
+        }
     }
 
     fn add(&mut self, index: usize, value: T) {
@@ -123,6 +131,7 @@ mod test {
     fn test_array_deque() {
         let mut array_deque: Array<char> = Array::new();
         assert_eq!(array_deque.size(), 0);
+        array_deque.get(0);
         array_deque.add(0, 'a');
         array_deque.add(1, 'b');
         array_deque.add(2, 'c');

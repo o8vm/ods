@@ -37,14 +37,22 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn get(&self, index: usize) -> Option<T> {
-        match self.buf[(self.ddx + index) % self.length()] {
-            Some(ref value) => Some(value.clone()),
-            None => None,
+        if index < self.len {
+            match self.buf[(self.ddx + index) % self.length()] {
+                Some(ref value) => Some(value.clone()),
+                None => None,
+            }
+        } else {
+            None
         }
     }
 
     fn set(&mut self, index: usize, value: T) -> Option<T> {
-        self.buf[(self.ddx + index) % self.length()].replace(value)
+        if index < self.len {
+            self.buf[(self.ddx + index) % self.length()].replace(value)
+        } else {
+            None
+        }
     }
 
     fn add(&mut self, index: usize, value: T) {
