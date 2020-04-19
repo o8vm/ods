@@ -17,7 +17,7 @@ impl<T> Array<T> {
 
     pub fn new(b: usize) -> Self {
         Self {
-            buf: Self::allocate_in_heap(b+1),
+            buf: Self::allocate_in_heap(b + 1),
             ddx: 0,
             len: 0,
         }
