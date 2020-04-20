@@ -60,7 +60,7 @@ impl<T: Default + Clone> SEList<T> {
             (p, i)
         } else {
             let mut idx = self.len;
-            p = self.tail.clone().and_then(|p| p.upgrade().clone()); 
+            p = self.tail.clone().and_then(|p| p.upgrade().clone());
             while i < idx {
                 p = p
                     .clone()
@@ -127,11 +127,15 @@ impl<T: Default + Clone> SEList<T> {
                 w.clone().map(|p| {
                     let link = p.borrow().prev.clone().and_then(|p| p.upgrade().clone());
                     let size = link.clone().map(|p| p.borrow().block.size()).unwrap();
-                    let x = link.and_then(|p| p.borrow_mut().block.remove(size - 1)).unwrap();
+                    let x = link
+                        .and_then(|p| p.borrow_mut().block.remove(size - 1))
+                        .unwrap();
                     p.borrow_mut().block.add(0, x);
                 });
             }
-            w = w.and_then(|p| p.borrow().prev.clone()).and_then(|p| p.upgrade());
+            w = w
+                .and_then(|p| p.borrow().prev.clone())
+                .and_then(|p| p.upgrade());
         }
     }
     fn gather(&mut self, u: Link<T>) {
@@ -198,7 +202,9 @@ impl<T: Clone + Default> List<T> for SEList<T> {
             u.clone().map(|p| {
                 let link = p.borrow().prev.clone().and_then(|p| p.upgrade().clone());
                 let size = link.clone().map(|p| p.borrow().block.size()).unwrap();
-                let x = link.and_then(|p| p.borrow_mut().block.remove(size - 1)).unwrap();
+                let x = link
+                    .and_then(|p| p.borrow_mut().block.remove(size - 1))
+                    .unwrap();
                 p.borrow_mut().block.add(0, x);
             });
             u = u
@@ -228,7 +234,10 @@ impl<T: Clone + Default> List<T> for SEList<T> {
         u = v.clone();
         let value = u.clone().and_then(|p| p.borrow_mut().block.remove(j));
         while u.clone().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
-            && u.clone().and_then(|p| p.borrow().next.clone()).and_then(|p| p.borrow().next.clone()).is_some()
+            && u.clone()
+                .and_then(|p| p.borrow().next.clone())
+                .and_then(|p| p.borrow().next.clone())
+                .is_some()
         {
             u.clone().map(|p| {
                 let link = p.borrow().next.clone();
