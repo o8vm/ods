@@ -61,13 +61,13 @@ impl<T: Default + Clone> SEList<T> {
         } else {
             let mut idx = self.len;
             p = self.tail.clone().and_then(|p| p.upgrade().clone()); 
-            while i < idx { // i <= idx
+            while i < idx {
                 p = p
                     .clone()
                     .and_then(|p| p.borrow().prev.clone().and_then(|p| p.upgrade().clone()));
                 idx -= p.clone().map(|p| p.borrow().block.size()).unwrap();
             }
-            (p, i - idx) // i - idx - 1
+            (p, i - idx)
         }
     }
 
