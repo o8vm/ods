@@ -100,6 +100,6 @@ mod test {
         assert_eq!(dual_array_deque.get(2), Some('x'));
         assert_eq!(dual_array_deque.get(3), Some('y'));
         assert_eq!(dual_array_deque.get(4), Some('D'));
-        println!("DualArrayDeque = {:?}", dual_array_deque);
+        println!("\nDualArrayDeque = {:?}\n", dual_array_deque);
     }
 }

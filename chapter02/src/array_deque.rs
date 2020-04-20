@@ -146,6 +146,6 @@ mod test {
         for (i, elem) in "bcxzd".chars().enumerate() {
             assert_eq!(array_deque.get(i), Some(elem));
         }
-        println!("ArrayDeque = {:?}", array_deque);
+        println!("\nArrayDeque = {:?}\n", array_deque);
     }
 }

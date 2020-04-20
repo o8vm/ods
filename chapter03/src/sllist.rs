@@ -93,6 +93,7 @@ mod test {
         assert_eq!(sllist.remove(), Some('a'));
         assert_eq!(sllist.pop(), Some('b'));
         sllist.push('y');
+        println!("\nSLList = {:?}", sllist);
         for elem in "ycdex".chars() {
             assert_eq!(sllist.remove(), Some(elem));
         }

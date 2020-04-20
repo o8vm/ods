@@ -124,6 +124,6 @@ mod test {
         for _i in 0..5 {
             bounded_deque.remove(0);
         }
-        println!("BDeque = {:?}", bounded_deque);
+        println!("\nBDeque = {:?}\n", bounded_deque);
     }
 }

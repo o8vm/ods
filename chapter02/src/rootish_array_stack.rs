@@ -107,6 +107,6 @@ mod test {
         for (i, elem) in "axcdef".chars().enumerate() {
             assert_eq!(rootish_array_stack.get(i), Some(elem));
         }
-        println!("RootishArrayStack = {:?}", rootish_array_stack);
+        println!("\nRootishArrayStack = {:?}\n", rootish_array_stack);
     }
 }

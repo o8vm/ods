@@ -152,7 +152,7 @@ mod test {
         assert_eq!(dllist.remove(2), Some('c'));
         dllist.add(2, 'y');
         assert_eq!(dllist.get(2), Some('y'));
-        println!("DLList = {:?}", dllist);
+        println!("\nDLList = {:?}\n", dllist);
         for elem in "axyde".chars() {
             assert_eq!(dllist.remove(0), Some(elem));
         }

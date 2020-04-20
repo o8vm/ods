@@ -121,6 +121,6 @@ mod test {
         for (i, elem) in "bri".chars().enumerate() {
             assert_eq!(array_stack.get(i), Some(elem));
         }
-        println!("ArrayStack = {:?}", array_stack);
+        println!("\nArrayStack = {:?}\n", array_stack);
     }
 }
