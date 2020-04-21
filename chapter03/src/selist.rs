@@ -1,5 +1,5 @@
 use chapter01::interface::List;
-use chapter02::bounded_deque::Array as BDeque;
+use chapter02::boundeddeque::Array as BDeque;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 

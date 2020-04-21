@@ -1,4 +1,4 @@
-use super::array_stack::Array as ArrayStack;
+use super::arraystack::Array as ArrayStack;
 use chapter01::interface::List;
 use std::cell::RefCell;
 use std::rc::Rc;
