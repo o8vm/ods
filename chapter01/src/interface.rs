@@ -23,9 +23,9 @@ pub trait USet<T: Eq> {
     fn find(&self, value: &T) -> Option<&T>;
 }
 
-pub trait SSet<T: Ord> {
+pub trait SSet<T: Ord + Clone> {
     fn size(&self) -> usize;
-    fn add(&mut self, value: T) -> bool;
-    fn remove(&mut self, value: &T) -> Option<T>;
-    fn find(&self, value: &T) -> Option<&T>;
+    fn add(&mut self, x: T) -> bool;
+    fn remove(&mut self, x: T) -> Option<T>;
+    fn find(&self, x: T) -> Option<T>;
 }

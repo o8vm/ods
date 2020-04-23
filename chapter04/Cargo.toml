@@ -1,0 +1,11 @@
+[package]
+name = "chapter04"
+version = "0.1.0"
+authors = ["ellbrid <ell@exoskeleton.dev>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chapter01 = { path = "../chapter01" }
+rand = "0.7.3"
