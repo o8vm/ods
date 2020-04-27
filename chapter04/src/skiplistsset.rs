@@ -90,6 +90,12 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                 }
                 let w = Node::new(x, Self::pick_height());
                 while self.h < w.borrow().next.len() - 1 {
+                    self.head
+                        .as_ref()
+                        .filter(|sentinel| sentinel.borrow().next.len() < w.borrow().next.len())
+                        .map(|sentinel| {
+                            sentinel.borrow_mut().next.push(None);
+                        });
                     self.h += 1;
                     self.stack.push(Some(Rc::clone(sentinel)));
                 }
@@ -132,6 +138,8 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                                 n.borrow_mut().next[r] = Some(next);
                             } else {
                                 if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
+                                    self.head.as_ref().map(|sentinel| sentinel.borrow_mut().next.pop());
+                                    self.stack.pop();
                                     self.h -= 1;
                                 }
                             }
