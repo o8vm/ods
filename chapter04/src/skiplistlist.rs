@@ -149,7 +149,6 @@ where
         }
         self.add_node(i, w);
     }
-    // should be modified
     fn remove(&mut self, i: usize) -> Option<T> {
         match self.head {
             Some(ref sentinel) => {
