@@ -24,6 +24,6 @@ The following is a list of data structures that have been implemented in Rust.
     * [SEList](/chapter03/src/selist.rs)
 * chapter04 (Skiplists)
     * [SkiplistSSet](/chapter04/src/skiplistsset.rs)
-    * [skiplistList](/chapter04/src/skiplistlist.rs)
+    * [SkiplistList](/chapter04/src/skiplistlist.rs)
 * chapter05 (Hash Tables)
     * ChainedHashTable(*coming soon*)
