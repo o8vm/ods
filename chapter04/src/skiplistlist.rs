@@ -5,20 +5,20 @@ use std::rc::Rc;
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SkiplistList<T: Eq> {
+pub struct SkiplistList<T> {
     head: Link<T>,
     h: usize,
     n: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-struct Node<T: Eq> {
+struct Node<T> {
     x: T,
     length: Vec<usize>,
     next: Vec<Link<T>>,
 }
 
-impl<T: Eq> Node<T> {
+impl<T> Node<T> {
     fn new(x: T, h: usize) -> Rc<RefCell<Node<T>>> {
         Rc::new(RefCell::new(Node {
             x,
@@ -28,7 +28,7 @@ impl<T: Eq> Node<T> {
     }
 }
 
-impl<T: Eq + Default> SkiplistList<T> {
+impl<T: Default> SkiplistList<T> {
     pub fn new(h: usize) -> Self {
         let sentinel = Node::new(Default::default(), h);
         Self {
@@ -100,10 +100,7 @@ impl<T: Eq + Default> SkiplistList<T> {
     }
 }
 
-impl<T> List<T> for SkiplistList<T>
-where
-    T: std::fmt::Debug + std::fmt::Debug + Eq + Clone + Default,
-{
+impl<T: Clone + Default> List<T> for SkiplistList<T> {
     fn size(&self) -> usize {
         self.n
     }
