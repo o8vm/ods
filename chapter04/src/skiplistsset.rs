@@ -138,7 +138,9 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                                 n.borrow_mut().next[r] = Some(next);
                             } else {
                                 if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
-                                    self.head.as_ref().map(|sentinel| sentinel.borrow_mut().next.pop());
+                                    self.head
+                                        .as_ref()
+                                        .map(|sentinel| sentinel.borrow_mut().next.pop());
                                     self.stack.pop();
                                     self.h -= 1;
                                 }
