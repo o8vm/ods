@@ -19,8 +19,8 @@ pub trait List<T: Clone> {
 pub trait USet<T: Eq + Clone> {
     fn size(&self) -> usize;
     fn add(&mut self, x: T) -> bool;
-    fn remove(&mut self, x: T) -> Option<T>;
-    fn find(&self, x: T) -> Option<T>;
+    fn remove(&mut self, x: &T) -> Option<T>;
+    fn find(&self, x: &T) -> Option<T>;
 }
 
 pub trait SSet<T: Ord + Clone> {
