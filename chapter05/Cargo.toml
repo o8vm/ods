@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 chapter01 = { path = "../chapter01" }
 chapter02 = { path = "../chapter02" }
+rand = "0.7.3"
