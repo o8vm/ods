@@ -26,6 +26,6 @@ pub trait USet<T: Eq + Clone> {
 pub trait SSet<T: Ord + Clone> {
     fn size(&self) -> usize;
     fn add(&mut self, x: T) -> bool;
-    fn remove(&mut self, x: T) -> Option<T>;
-    fn find(&self, x: T) -> Option<T>;
+    fn remove(&mut self, x: &T) -> Option<T>;
+    fn find(&self, x: &T) -> Option<T>;
 }

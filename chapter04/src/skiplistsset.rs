@@ -38,7 +38,7 @@ impl<T: Ord + Default> SkiplistSSet<T> {
         }
     }
 
-    fn find_pred_node(&self, x: T) -> Link<T> {
+    fn find_pred_node(&self, x: &T) -> Link<T> {
         match self.head {
             Some(ref sentinel) => {
                 let mut n = Rc::clone(sentinel);
@@ -46,7 +46,7 @@ impl<T: Ord + Default> SkiplistSSet<T> {
                     loop {
                         let u = Rc::clone(&n);
                         match u.borrow().next[r] {
-                            Some(ref u) if u.borrow().x < x => n = Rc::clone(u),
+                            Some(ref u) if u.borrow().x < *x => n = Rc::clone(u),
                             _ => break,
                         };
                     }
@@ -116,7 +116,7 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
         }
     }
 
-    fn remove(&mut self, x: T) -> Option<T> {
+    fn remove(&mut self, x: &T) -> Option<T> {
         match self.head {
             Some(ref sentinel) => {
                 let mut n = Rc::clone(sentinel);
@@ -126,8 +126,8 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                     let removed = loop {
                         let u = Rc::clone(&n);
                         match u.borrow().next[r] {
-                            Some(ref u) if u.borrow().x < x => n = Rc::clone(u),
-                            Some(ref u) if u.borrow().x == x => break true,
+                            Some(ref u) if u.borrow().x < *x => n = Rc::clone(u),
+                            Some(ref u) if u.borrow().x == *x => break true,
                             _ => break false,
                         };
                     };
@@ -157,7 +157,7 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
         }
     }
 
-    fn find(&self, x: T) -> Option<T> {
+    fn find(&self, x: &T) -> Option<T> {
         match self.find_pred_node(x) {
             Some(ref u) if u.borrow().next[0].is_some() => {
                 u.borrow().next[0].as_ref().map(|u| u.borrow().x.clone())
@@ -185,21 +185,21 @@ mod test {
             if i == 4 {
                 continue;
             }
-            assert_eq!(skiplistsset.find(i), Some(i));
+            assert_eq!(skiplistsset.find(&i), Some(i));
         }
         assert_eq!(skiplistsset.size(), 7);
         skiplistsset.add(4);
         for i in 0..8 {
-            assert_eq!(skiplistsset.find(i), Some(i));
+            assert_eq!(skiplistsset.find(&i), Some(i));
         }
-        assert_eq!(skiplistsset.remove(4), Some(4));
+        assert_eq!(skiplistsset.remove(&4), Some(4));
         for i in 0..8 {
             if i == 4 {
                 continue;
             }
-            assert_eq!(skiplistsset.find(i), Some(i));
+            assert_eq!(skiplistsset.find(&i), Some(i));
         }
-        assert_eq!(skiplistsset.remove(9), None);
+        assert_eq!(skiplistsset.remove(&9), None);
         println!("\nSkiplistSSet = {:?}\n", skiplistsset);
     }
 }
