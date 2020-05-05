@@ -10,7 +10,7 @@ enum Elem<T> {
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct LinerHashTable<T> {
+pub struct LinearHashTable<T> {
     t: Box<[Elem<T>]>,
     n: usize,
     q: usize,
@@ -23,7 +23,7 @@ impl<T> Default for Elem<T> {
     }
 }
 
-impl<T> LinerHashTable<T>
+impl<T> LinearHashTable<T>
 where
     T: Eq + Clone + Hash,
 {
@@ -43,9 +43,22 @@ where
         }
         let new_t = Self::allocate_in_heap(1 << self.d);
         let old_t = std::mem::replace(&mut self.t, new_t);
-        for elem in old_t.into_vec().into_iter() {
-            match elem {
-                Elem::Val(y) => todo!(),
+        for oelem in old_t.into_vec().into_iter() {
+            match oelem {
+                Elem::Val(x) => {
+                    let mut i = self.hash(&x);
+                    loop {
+                        match self.t.get(i) {
+                            Some(nelem) if nelem != &Elem::Null => {
+                                i = if i == self.t.len() - 1 { 0 } else { i + 1 }
+                            }
+                            _ => break,
+                        }
+                    }
+                    if let Some(elem) = self.t.get_mut(i) {
+                        *elem = Elem::Val(x);
+                    }
+                }
                 _ => continue,
             }
         }
@@ -53,7 +66,7 @@ where
     }
 }
 
-impl<T> USet<T> for LinerHashTable<T>
+impl<T> USet<T> for LinearHashTable<T>
 where
     T: Eq + Clone + Hash,
 {
