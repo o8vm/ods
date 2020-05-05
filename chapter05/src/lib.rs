@@ -1,4 +1,5 @@
 pub mod chainedhashtable;
+pub mod linearhashtable;
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
