@@ -2,14 +2,14 @@ use chapter01::interface::Queue;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
-    buf: Box<[Option<T>]>,
-    ddx: usize,
-    len: usize,
+    a: Box<[Option<T>]>,
+    j: usize,
+    n: usize,
 }
 
 impl<T> Array<T> {
     pub fn length(&self) -> usize {
-        self.buf.len()
+        self.a.len()
     }
 
     pub fn new() -> Self {
@@ -18,9 +18,9 @@ impl<T> Array<T> {
 
     pub fn with_length(capacity: usize) -> Self {
         Self {
-            buf: Self::allocate_in_heap(capacity),
-            ddx: 0,
-            len: 0,
+            a: Self::allocate_in_heap(capacity),
+            j: 0,
+            n: 0,
         }
     }
 
@@ -32,29 +32,29 @@ impl<T> Array<T> {
     }
 
     fn resize(&mut self) {
-        let new_buf = Self::allocate_in_heap(std::cmp::max(self.len * 2, 1));
-        let mut old_buf = std::mem::replace(&mut self.buf, new_buf);
-        for k in 0..self.len {
-            self.buf[k] = old_buf[(self.ddx + k) % old_buf.len()].take();
+        let new_a = Self::allocate_in_heap(std::cmp::max(self.n * 2, 1));
+        let mut old_a = std::mem::replace(&mut self.a, new_a);
+        for k in 0..self.n {
+            self.a[k] = old_a[(self.j + k) % old_a.len()].take();
         }
-        self.ddx = 0;
+        self.j = 0;
     }
 }
 
 impl<T> Queue<T> for Array<T> {
     fn add(&mut self, value: T) {
-        if self.len + 1 >= self.length() {
+        if self.n + 1 >= self.length() {
             self.resize();
         }
-        self.buf[(self.ddx + self.len) % self.length()] = Some(value);
-        self.len += 1;
+        self.a[(self.j + self.n) % self.length()] = Some(value);
+        self.n += 1;
     }
 
     fn remove(&mut self) -> Option<T> {
-        let value = self.buf[self.ddx].take();
-        self.ddx = (self.ddx + 1) % self.length();
-        self.len -= 1;
-        if self.length() >= 3 * self.len {
+        let value = self.a[self.j].take();
+        self.j = (self.j + 1) % self.length();
+        self.n -= 1;
+        if self.length() >= 3 * self.n {
             self.resize();
         }
         value
@@ -66,7 +66,7 @@ mod test {
     use super::Array;
     use chapter01::interface::Queue;
     #[test]
-    fn test_array_stack() {
+    fn test_arrayqueue() {
         let mut array_queue: Array<char> = Array::new();
         for elem in "aaabc".chars() {
             array_queue.add(elem);
