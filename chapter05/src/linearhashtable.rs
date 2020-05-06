@@ -182,6 +182,11 @@ mod test {
         }
         assert_eq!(linearhashtable.remove(&'x'), Some('x'));
         assert_eq!(linearhashtable.remove(&'x'), None);
+        assert_eq!(linearhashtable.remove(&'a'), Some('a'));
+        assert_eq!(linearhashtable.remove(&'b'), Some('b'));
+        assert_eq!(linearhashtable.remove(&'c'), Some('c'));
+        assert_eq!(linearhashtable.remove(&'e'), Some('e'));
+        assert_eq!(linearhashtable.remove(&'a'), None);
         println!("{:?}", linearhashtable);
     }
 }
