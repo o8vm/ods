@@ -1,4 +1,4 @@
-use super::{hashcode, byte_chunks_64};
+use super::{byte_chunks_64, hashcode};
 use chapter01::interface::USet;
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
@@ -54,7 +54,8 @@ where
             .collect::<Vec<_>>()
             .into_boxed_slice()
     }
-    fn hash(&self, x: &T) -> usize { // u64 tabulation hashing
+    fn hash(&self, x: &T) -> usize {
+        // u64 tabulation hashing
         let mut v = 0u64;
         let h = hashcode(x);
         let chunks = byte_chunks_64(h as u64);
