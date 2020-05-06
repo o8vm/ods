@@ -1,6 +1,18 @@
-use super::hashcode;
+use super::{hashcode, byte_chunks_64};
 use chapter01::interface::USet;
+use lazy_static::lazy_static;
+use rand::{thread_rng, Rng};
 use std::hash::Hash;
+
+lazy_static! {
+    pub static ref TAB: [[u64; 256]; 8] = {
+        let mut array = [[0; 256]; 8];
+        for i in 0..8 {
+            thread_rng().fill(&mut array[i]);
+        }
+        array
+    };
+}
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Copy)]
 enum Elem<T> {
@@ -14,7 +26,7 @@ pub struct LinearHashTable<T> {
     t: Box<[Elem<T>]>,
     n: usize,
     q: usize,
-    d: usize,
+    d: u32,
 }
 
 impl<T> Default for Elem<T> {
@@ -27,14 +39,30 @@ impl<T> LinearHashTable<T>
 where
     T: Eq + Clone + Hash,
 {
+    const W: u32 = (std::mem::size_of::<usize>() * 8) as u32;
+    pub fn new() -> Self {
+        Self {
+            t: Self::allocate_in_heap(2),
+            n: 0,
+            q: 1,
+            d: 1,
+        }
+    }
     fn allocate_in_heap<'a>(size: usize) -> Box<[Elem<T>]> {
         std::iter::repeat_with(|| Default::default())
             .take(size)
             .collect::<Vec<_>>()
             .into_boxed_slice()
     }
-    fn hash(&self, x: &T) -> usize {
-        todo!()
+    fn hash(&self, x: &T) -> usize { // u64 tabulation hashing
+        let mut v = 0u64;
+        let h = hashcode(x);
+        let chunks = byte_chunks_64(h as u64);
+        for (i, c) in chunks.iter().enumerate() {
+            v ^= TAB[i][*c as usize];
+        }
+        v = v.overflowing_shr(Self::W - self.d).0;
+        v as usize
     }
     fn resize(&mut self) {
         self.d = 1;
@@ -62,7 +90,6 @@ where
                 _ => continue,
             }
         }
-        todo!()
     }
 }
 
@@ -132,5 +159,28 @@ where
                 _ => break None,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::LinearHashTable;
+    use chapter01::interface::USet;
+    #[test]
+    fn test_linearhashtable() {
+        let mut linearhashtable = LinearHashTable::<char>::new();
+        linearhashtable.add('a');
+        linearhashtable.add('b');
+        linearhashtable.add('c');
+        linearhashtable.add('d');
+        linearhashtable.add('e');
+        linearhashtable.add('x');
+        assert_eq!(false, linearhashtable.add('x'));
+        for elem in "abcdex".chars() {
+            assert_eq!(linearhashtable.find(&elem), Some(elem));
+        }
+        assert_eq!(linearhashtable.remove(&'x'), Some('x'));
+        assert_eq!(linearhashtable.remove(&'x'), None);
+        println!("{:?}", linearhashtable);
     }
 }

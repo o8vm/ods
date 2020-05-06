@@ -27,4 +27,6 @@ The following is a list of data structures that have been implemented in Rust.
     * [SkiplistList](/chapter04/src/skiplistlist.rs)
 * chapter05 (Hash Tables)
     * [ChainedHashTable](/chapter05/src/chainedhashtable.rs)
-    * LinearHashTable(*coming soon*)
+    * [LinearHashTable](/chapter05/src/linearhashtable.rs)
+* chapter06 (Binary Trees)
+    * BinaryTree(*coming soon*)
