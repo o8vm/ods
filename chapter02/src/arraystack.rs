@@ -12,7 +12,7 @@ impl<T> Array<T> {
     }
 
     pub fn new() -> Self {
-        Self::with_length(0)
+        Self::with_length(1)
     }
 
     pub fn with_length(capacity: usize) -> Self {
@@ -44,10 +44,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn get(&self, i: usize) -> Option<T> {
-        match self.a.get(i)? {
-            Some(x) => Some(x.clone()),
-            None => None,
-        }
+        self.a.get(i)?.as_ref().and_then(|x| Some(x.clone()))
     }
 
     fn set(&mut self, i: usize, x: T) -> Option<T> {

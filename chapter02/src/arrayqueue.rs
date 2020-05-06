@@ -13,7 +13,7 @@ impl<T> Array<T> {
     }
 
     pub fn new() -> Self {
-        Self::with_length(0)
+        Self::with_length(1)
     }
 
     pub fn with_length(capacity: usize) -> Self {
