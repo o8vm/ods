@@ -51,13 +51,13 @@ impl<T> Queue<T> for Array<T> {
     }
 
     fn remove(&mut self) -> Option<T> {
-        let value = self.a[self.j].take();
+        let x = self.a[self.j].take();
         self.j = (self.j + 1) % self.length();
         self.n -= 1;
         if self.length() >= 3 * self.n {
             self.resize();
         }
-        value
+        x
     }
 }
 
