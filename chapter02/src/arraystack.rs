@@ -2,13 +2,13 @@ use chapter01::interface::List;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
-    buf: Box<[Option<T>]>,
-    len: usize,
+    a: Box<[Option<T>]>,
+    n: usize,
 }
 
 impl<T> Array<T> {
     pub fn length(&self) -> usize {
-        self.buf.len()
+        self.a.len()
     }
 
     pub fn new() -> Self {
@@ -17,8 +17,8 @@ impl<T> Array<T> {
 
     pub fn with_length(capacity: usize) -> Self {
         Self {
-            buf: Self::allocate_in_heap(capacity),
-            len: 0,
+            a: Self::allocate_in_heap(capacity),
+            n: 0,
         }
     }
 
@@ -30,65 +30,53 @@ impl<T> Array<T> {
     }
 
     fn resize(&mut self) {
-        let new_buf = Self::allocate_in_heap(std::cmp::max(self.len * 2, 1));
-        let old_buf = std::mem::replace(&mut self.buf, new_buf);
-        for (i, elem) in old_buf.into_vec().into_iter().enumerate().take(self.len) {
-            self.buf[i] = elem;
+        let new_a = Self::allocate_in_heap(std::cmp::max(self.n * 2, 1));
+        let old_a = std::mem::replace(&mut self.a, new_a);
+        for (i, elem) in old_a.into_vec().into_iter().enumerate().take(self.n) {
+            self.a[i] = elem;
         }
     }
 }
 
 impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
-        self.len
+        self.n
     }
 
-    fn get(&self, index: usize) -> Option<T> {
-        if index < self.len {
-            match self.buf[index] {
-                Some(ref value) => Some(value.clone()),
-                None => None,
-            }
-        } else {
-            None
+    fn get(&self, i: usize) -> Option<T> {
+        match self.a.get(i)? {
+            Some(x) => Some(x.clone()),
+            None => None,
         }
     }
 
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if index < self.len {
-            self.buf[index].replace(value)
-        } else {
-            None
-        }
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        self.a.get_mut(i)?.replace(x)
     }
 
-    fn add(&mut self, index: usize, value: T) {
-        if self.len + 1 >= self.length() {
+    fn add(&mut self, i: usize, x: T) {
+        if self.n + 1 >= self.length() {
             self.resize();
         }
 
-        if index >= self.len {
-            self.buf[self.len] = Some(value);
+        if i >= self.n {
+            self.a[self.n] = Some(x);
         } else {
-            self.buf[index..self.len].rotate_right(1);
-            let end = self.buf[index].replace(value);
-            self.buf[self.len] = end;
+            self.a[i..self.n].rotate_right(1);
+            let end = self.a[i].replace(x);
+            self.a[self.n] = end;
         }
-        self.len += 1;
+        self.n += 1;
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        if index < self.len {
-            let value = self.buf[index].take();
-            self.buf[index..self.len].rotate_left(1);
-            self.len -= 1;
-            if self.length() >= 3 * self.len {
-                self.resize();
-            }
-            value
-        } else {
-            None
+    fn remove(&mut self, i: usize) -> Option<T> {
+        let x = self.a.get_mut(i)?.take();
+        self.a[i..self.n].rotate_left(1);
+        self.n -= 1;
+        if self.length() >= 3 * self.n {
+            self.resize();
         }
+        x
     }
 }
 
@@ -98,7 +86,7 @@ mod test {
     use chapter01::interface::List;
 
     #[test]
-    fn test_array_stack() {
+    fn test_arraystack() {
         let mut array_stack: Array<char> = Array::new();
         assert_eq!(array_stack.size(), 0);
         for (i, elem) in "bred".chars().enumerate() {
@@ -121,6 +109,7 @@ mod test {
         for (i, elem) in "bri".chars().enumerate() {
             assert_eq!(array_stack.get(i), Some(elem));
         }
+        assert_eq!(array_stack.get(4), None);
         println!("\nArrayStack = {:?}\n", array_stack);
     }
 }
