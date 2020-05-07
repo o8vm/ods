@@ -8,18 +8,18 @@ type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 pub struct SLList<T> {
     head: Link<T>,
     tail: Link<T>,
-    len: usize,
+    n: usize,
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 struct Node<T> {
-    value: T,
+    x: T,
     next: Link<T>,
 }
 
 impl<T> Node<T> {
-    fn new(value: T) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self { value, next: None }))
+    fn new(x: T) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self { x, next: None }))
     }
 }
 
@@ -28,19 +28,19 @@ impl<T> SLList<T> {
         Self {
             head: None,
             tail: None,
-            len: 0,
+            n: 0,
         }
     }
 }
 
 impl<T> Stack<T> for SLList<T> {
-    fn push(&mut self, value: T) {
-        let new = Node::new(value);
+    fn push(&mut self, x: T) {
+        let new = Node::new(x);
         match self.head.take() {
             Some(old) => new.borrow_mut().next = Some(old.clone()),
             None => self.tail = Some(new.clone()),
         }
-        self.len += 1;
+        self.n += 1;
         self.head = Some(new);
     }
     fn pop(&mut self) -> Option<T> {
@@ -50,20 +50,20 @@ impl<T> Stack<T> for SLList<T> {
             } else {
                 self.tail.take();
             }
-            self.len -= 1;
-            Rc::try_unwrap(old).ok().unwrap().into_inner().value
+            self.n -= 1;
+            Rc::try_unwrap(old).ok().unwrap().into_inner().x
         })
     }
 }
 
 impl<T> Queue<T> for SLList<T> {
-    fn add(&mut self, value: T) {
-        let new = Node::new(value);
+    fn add(&mut self, x: T) {
+        let new = Node::new(x);
         match self.tail.take() {
             Some(old) => old.borrow_mut().next = Some(new.clone()),
             None => self.head = Some(new.clone()),
         }
-        self.len += 1;
+        self.n += 1;
         self.tail = Some(new);
     }
     fn remove(&mut self) -> Option<T> {
@@ -73,8 +73,8 @@ impl<T> Queue<T> for SLList<T> {
             } else {
                 self.tail.take();
             }
-            self.len -= 1;
-            Rc::try_unwrap(old).ok().unwrap().into_inner().value
+            self.n -= 1;
+            Rc::try_unwrap(old).ok().unwrap().into_inner().x
         })
     }
 }

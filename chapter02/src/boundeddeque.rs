@@ -2,24 +2,24 @@ use chapter01::interface::List;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
-    buf: Box<[Option<T>]>,
-    ddx: usize,
-    len: usize,
+    a: Box<[Option<T>]>,
+    j: usize,
+    n: usize,
 }
 
 impl<T> Array<T> {
     pub fn pos(&self) -> usize {
-        self.ddx
+        self.j
     }
     pub fn length(&self) -> usize {
-        self.buf.len()
+        self.a.len()
     }
 
     pub fn new(b: usize) -> Self {
         Self {
-            buf: Self::allocate_in_heap(b),
-            ddx: 0,
-            len: 0,
+            a: Self::allocate_in_heap(b),
+            j: 0,
+            n: 0,
         }
     }
 
@@ -33,70 +33,60 @@ impl<T> Array<T> {
 
 impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
-        self.len
+        self.n
     }
 
-    fn get(&self, index: usize) -> Option<T> {
-        if index < self.len {
-            match self.buf[(self.ddx + index) % self.length()] {
-                Some(ref value) => Some(value.clone()),
-                None => None,
-            }
-        } else {
-            None
-        }
+    fn get(&self, i: usize) -> Option<T> {
+        self.a
+            .get((self.j + i) % self.length())?
+            .as_ref()
+            .and_then(|x| Some(x.clone()))
     }
 
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if index < self.len {
-            self.buf[(self.ddx + index) % self.length()].replace(value)
-        } else {
-            None
-        }
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        self.a.get_mut((self.j + i) % self.length())?.replace(x)
     }
 
-    fn add(&mut self, index: usize, value: T) {
-        assert!(index <= self.len);
-        assert_ne!(self.length(), self.len);
-        if index < self.len / 2 {
-            self.ddx = if self.ddx == 0 {
+    fn add(&mut self, i: usize, x: T) {
+        assert!(i <= self.n);
+        assert_ne!(self.length(), self.n);
+        if i < self.n / 2 {
+            self.j = if self.j == 0 {
                 self.length() - 1
             } else {
-                self.ddx - 1
+                self.j - 1
             };
-            if index > 0 {
-                for k in 0..index - 1 {
-                    self.buf[(self.ddx + k) % self.length()] =
-                        self.buf[(self.ddx + k + 1) % self.length()].take();
-                }
+            for k in 0..i {
+                self.a[(self.j + k) % self.length()] =
+                    self.a[(self.j + k + 1) % self.length()].take();
             }
         } else {
-            for k in (index + 1..=self.len).rev() {
-                self.buf[(self.ddx + k) % self.length()] =
-                    self.buf[(self.ddx + k - 1) % self.length()].take();
+            for k in (i + 1..=self.n).rev() {
+                self.a[(self.j + k) % self.length()] =
+                    self.a[(self.j + k - 1) % self.length()].take();
             }
         }
-        self.buf[(self.ddx + index) % self.length()] = Some(value);
-        self.len += 1;
+        self.a[(self.j + i) % self.length()] = Some(x);
+        self.n += 1;
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        assert!(index < self.len);
-        let value = self.buf[(self.ddx + index) % self.length()].take();
-        if index < self.len / 2 {
-            for k in (1..=index).rev() {
-                self.buf[(self.ddx + k) % self.length()] =
-                    self.buf[(self.ddx + k - 1) % self.length()].take();
+    fn remove(&mut self, i: usize) -> Option<T> {
+        assert!(i < self.n);
+        let x = self.a[(self.j + i) % self.length()].take();
+        if i < self.n / 2 {
+            for k in (1..=i).rev() {
+                self.a[(self.j + k) % self.length()] =
+                    self.a[(self.j + k - 1) % self.length()].take();
             }
-            self.ddx = (self.ddx + 1) % self.length();
+            self.j = (self.j + 1) % self.length();
         } else {
-            for k in index..self.len - 1 {
-                self.buf[(self.ddx + k) % self.length()] =
-                    self.buf[(self.ddx + k + 1) % self.length()].take();
+            for k in i..self.n - 1 {
+                self.a[(self.j + k) % self.length()] =
+                    self.a[(self.j + k + 1) % self.length()].take();
             }
         }
-        self.len -= 1;
-        value
+        self.n -= 1;
+        x
     }
 }
 
@@ -105,7 +95,7 @@ mod test {
     use super::Array;
     use chapter01::interface::List;
     #[test]
-    fn test_bounded_deque() {
+    fn test_boundeddeque() {
         let mut bounded_deque: Array<char> = Array::new(6);
         bounded_deque.add(0, 'a');
         bounded_deque.add(1, 'b');

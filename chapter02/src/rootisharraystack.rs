@@ -6,18 +6,18 @@ use std::rc::Rc;
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Array<T> {
     blocks: ArrayStack<Rc<[RefCell<Option<T>>]>>,
-    len: usize,
+    n: usize,
 }
 
 impl<T: Clone> Array<T> {
     pub fn new() -> Self {
         Self {
             blocks: ArrayStack::new(),
-            len: 0,
+            n: 0,
         }
     }
-    fn i2b(index: usize) -> usize {
-        let db = (-3.0 + (9.0 + 8.0 * index as f64).sqrt()) / 2f64;
+    fn i2b(i: usize) -> usize {
+        let db = (-3.0 + (9.0 + 8.0 * i as f64).sqrt()) / 2f64;
         db.ceil() as usize
     }
     fn grow(&mut self) {
@@ -28,7 +28,7 @@ impl<T: Clone> Array<T> {
     }
     fn shrink(&mut self) {
         let mut r = self.blocks.size();
-        while r > 0 && (r - 2) * (r - 1) / 2 >= self.len {
+        while r > 0 && (r - 2) * (r - 1) / 2 >= self.n {
             self.blocks.remove(self.blocks.size() - 1);
             r -= 1;
         }
@@ -37,52 +37,52 @@ impl<T: Clone> Array<T> {
 
 impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
-        self.len
+        self.n
     }
 
-    fn get(&self, index: usize) -> Option<T> {
-        let b = Self::i2b(index);
-        let j = index - b * (b + 1) / 2;
+    fn get(&self, i: usize) -> Option<T> {
+        let b = Self::i2b(i);
+        let j = i - b * (b + 1) / 2;
         match self.blocks.get(b)?[j].borrow().as_ref() {
             Some(value) => Some(value.clone()),
             None => None,
         }
     }
 
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        let b = Self::i2b(index);
-        let j = index - b * (b + 1) / 2;
-        self.blocks.get(b)?[j].borrow_mut().replace(value)
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        let b = Self::i2b(i);
+        let j = i - b * (b + 1) / 2;
+        self.blocks.get(b)?[j].borrow_mut().replace(x)
     }
 
-    fn add(&mut self, index: usize, value: T) {
-        assert!(index <= self.len);
+    fn add(&mut self, i: usize, x: T) {
+        assert!(i <= self.n);
         let r = self.blocks.size();
-        if r * (r + 1) / 2 < self.len + 1 {
+        if r * (r + 1) / 2 < self.n + 1 {
             self.grow();
         }
-        self.len += 1;
-        for j in (index + 1..self.len).rev() {
+        self.n += 1;
+        for j in (i + 1..self.n).rev() {
             self.set(j, self.get(j - 1).unwrap());
         }
-        self.set(index, value);
+        self.set(i, x);
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        assert!(index < self.len);
-        let value = self.get(index);
-        for j in index..self.len - 1 {
+    fn remove(&mut self, i: usize) -> Option<T> {
+        assert!(i < self.n);
+        let x = self.get(i);
+        for j in i..self.n - 1 {
             self.set(j, self.get(j + 1).unwrap());
         }
-        let eb = Self::i2b(self.len - 1);
-        let ej = self.len - 1 - eb * (eb + 1) / 2;
+        let eb = Self::i2b(self.n - 1);
+        let ej = self.n - 1 - eb * (eb + 1) / 2;
         self.blocks.get(eb)?[ej].borrow_mut().take();
-        self.len -= 1;
+        self.n -= 1;
         let r = self.blocks.size();
-        if (r - 2) * (r - 1) / 2 <= self.len {
+        if (r - 2) * (r - 1) / 2 <= self.n {
             self.shrink();
         }
-        value
+        x
     }
 }
 
@@ -91,7 +91,7 @@ mod test {
     use super::Array;
     use chapter01::interface::List;
     #[test]
-    fn test_rootish_array_stack() {
+    fn test_rootisharraystack() {
         let mut rootish_array_stack: Array<char> = Array::new();
         assert_eq!(rootish_array_stack.size(), 0);
         for (i, elem) in "abcdefgh".chars().enumerate() {

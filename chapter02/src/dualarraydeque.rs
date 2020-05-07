@@ -39,40 +39,40 @@ impl<T: Clone> List<T> for Array<T> {
         self.front.size() + self.back.size()
     }
 
-    fn get(&self, index: usize) -> Option<T> {
-        if index < self.front.size() {
-            self.front.get(self.front.size() - index - 1)
+    fn get(&self, i: usize) -> Option<T> {
+        if i < self.front.size() {
+            self.front.get(self.front.size() - i - 1)
         } else {
-            self.back.get(index - self.front.size())
+            self.back.get(i - self.front.size())
         }
     }
 
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if index < self.front.size() {
-            self.front.set(self.front.size() - index - 1, value)
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        if i < self.front.size() {
+            self.front.set(self.front.size() - i - 1, x)
         } else {
-            self.back.set(index - self.front.size(), value)
+            self.back.set(i - self.front.size(), x)
         }
     }
 
-    fn add(&mut self, index: usize, value: T) {
-        if index < self.front.size() {
-            self.front.add(self.front.size() - index, value);
+    fn add(&mut self, i: usize, x: T) {
+        if i < self.front.size() {
+            self.front.add(self.front.size() - i, x);
         } else {
-            self.back.add(index - self.front.size(), value);
+            self.back.add(i - self.front.size(), x);
         }
         self.balance();
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        let value;
-        if index < self.front.size() {
-            value = self.front.remove(self.front.size() - index - 1);
+    fn remove(&mut self, i: usize) -> Option<T> {
+        let x;
+        if i < self.front.size() {
+            x = self.front.remove(self.front.size() - i - 1);
         } else {
-            value = self.back.remove(index - self.front.size());
+            x = self.back.remove(i - self.front.size());
         }
         self.balance();
-        value
+        x
     }
 }
 
@@ -81,7 +81,7 @@ mod test {
     use super::Array;
     use chapter01::interface::List;
     #[test]
-    fn test_dual_array_deque() {
+    fn test_dualarraydeque() {
         let mut dual_array_deque: Array<char> = Array::new();
         assert_eq!(dual_array_deque.size(), 0);
         dual_array_deque.add(0, 'A');

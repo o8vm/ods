@@ -9,20 +9,20 @@ type Wink<T> = Option<Weak<RefCell<Node<T>>>>;
 pub struct DLList<T> {
     head: Link<T>,
     tail: Wink<T>,
-    len: usize,
+    n: usize,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct Node<T> {
-    value: T,
+    x: T,
     next: Link<T>,
     prev: Wink<T>,
 }
 
 impl<T> Node<T> {
-    fn new(value: T) -> Rc<RefCell<Self>> {
+    fn new(x: T) -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(Self {
-            value,
+            x,
             next: None,
             prev: None,
         }))
@@ -38,92 +38,83 @@ impl<T: Default> DLList<T> {
         Self {
             head: Some(dummy1),
             tail: Some(Rc::downgrade(&dummy2)),
-            len: 0,
+            n: 0,
         }
     }
 
-    fn get_link(&self, index: usize) -> Link<T> {
+    fn get_link(&self, i: usize) -> Link<T> {
         let mut p: Link<T>;
-        if index < self.len / 2 {
-            p = self
-                .head
-                .clone()
-                .and_then(|dummy| dummy.borrow().next.clone());
-            for _j in 0..index {
+        if i < self.n / 2 {
+            p = self.head.as_ref().and_then(|d| d.borrow().next.clone());
+            for _j in 0..i {
                 p = p.and_then(|p| p.borrow().next.clone());
             }
         } else {
-            p = self.tail.clone().and_then(|p| p.upgrade().clone());
-            for _j in (index + 1..=self.len).rev() {
-                p = p.and_then(|p| p.borrow().prev.clone().and_then(|p| p.upgrade().clone()));
+            p = self.tail.as_ref().and_then(|p| p.upgrade());
+            for _j in (i + 1..=self.n).rev() {
+                p = p.and_then(|p| p.borrow().prev.as_ref().and_then(|p| p.upgrade()));
             }
         }
         p
     }
 
-    fn add_before(&mut self, w: Link<T>, value: T) {
-        let u = Node::new(value);
-        u.borrow_mut().prev = w.clone().and_then(|p| p.borrow().prev.clone());
-        u.borrow_mut().next = w;
-        u.borrow_mut()
-            .next
-            .clone()
+    fn add_before(&mut self, w: Link<T>, x: T) {
+        let u = Node::new(x);
+        u.borrow_mut().prev = w.as_ref().and_then(|p| p.borrow().prev.clone());
+        w.as_ref()
             .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
-        u.borrow_mut().prev.clone().and_then(|p| {
-            p.upgrade()
-                .clone()
-                .map(|p| p.borrow_mut().next = Some(u.clone()))
-        });
-        self.len += 1;
+        u.borrow_mut().next = w;
+        u.borrow()
+            .prev
+            .as_ref()
+            .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = Some(u.clone())));
+        self.n += 1;
     }
 
     fn remove_link(&mut self, w: Link<T>) {
-        let prev = w.clone().and_then(|p| p.borrow_mut().prev.take());
+        let prev = w.as_ref().and_then(|p| p.borrow_mut().prev.take());
         let next = w.and_then(|p| p.borrow_mut().next.take());
-        prev.clone().and_then(|p| {
-            p.upgrade()
-                .clone()
-                .map(|p| p.borrow_mut().next = next.clone())
-        });
+        prev.as_ref()
+            .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = next.clone()));
         next.map(|p| p.borrow_mut().prev = prev);
-        self.len -= 1;
+        self.n -= 1;
     }
 }
 
 impl<T: Clone + Default> List<T> for DLList<T> {
     fn size(&self) -> usize {
-        self.len
+        self.n
     }
-    fn get(&self, index: usize) -> Option<T> {
-        if self.len == 0 {
+    fn get(&self, i: usize) -> Option<T> {
+        if self.n == 0 {
             None
         } else {
-            self.get_link(index).map(|p| p.borrow().value.clone())
+            self.get_link(i).map(|p| p.borrow().x.clone())
         }
     }
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if self.len > 0 {
-            self.get_link(index).map(|p| {
-                let ret = p.borrow().value.clone();
-                p.borrow_mut().value = value;
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        if self.n > 0 {
+            self.get_link(i).map(|p| {
+                let ret = p.borrow().x.clone();
+                p.borrow_mut().x = x;
                 ret
             })
         } else {
             None
         }
     }
-    fn add(&mut self, index: usize, value: T) {
-        self.add_before(self.get_link(index), value);
+    fn add(&mut self, i: usize, x: T) {
+        self.add_before(self.get_link(i), x);
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        if self.len == 0 {
+    fn remove(&mut self, i: usize) -> Option<T> {
+        if self.n == 0 {
             return None;
         }
-        let w = self.get_link(index);
+        let w = self.get_link(i);
         self.remove_link(w.clone());
         match w {
-            Some(w) => Some(Rc::try_unwrap(w).ok().unwrap().into_inner().value),
+            Some(w) => Some(Rc::try_unwrap(w).ok().unwrap().into_inner().x),
             None => None,
         }
     }
