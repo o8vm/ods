@@ -63,8 +63,8 @@ impl BinaryTree {
             match u {
                 Some(ref n) => {
                     let parent = n.parent.borrow().as_ref().and_then(|p| p.upgrade());
-                    let left = n.left.borrow().as_ref().map(|l| l.clone());
-                    let right = n.right.borrow().as_ref().map(|r| r.clone());
+                    let left = n.left.borrow().clone();
+                    let right = n.right.borrow().clone();
                     match (prev, parent, left, right) {
                         (Some(p), Some(v), left, right) if Rc::ptr_eq(&p, &v) => {
                             c += 1;
@@ -128,8 +128,8 @@ impl BinaryTree {
             match u {
                 Some(ref n) => {
                     let parent = n.parent.borrow().as_ref().and_then(|p| p.upgrade());
-                    let left = n.left.borrow().as_ref().map(|l| l.clone());
-                    let right = n.right.borrow().as_ref().map(|r| r.clone());
+                    let left = n.left.borrow().clone();
+                    let right = n.right.borrow().clone();
                     match (prev, parent, left, right) {
                         (Some(p), Some(v), left, right) if Rc::ptr_eq(&p, &v) => {
                             next = left.or(right).or(Some(p));
