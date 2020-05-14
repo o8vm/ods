@@ -27,7 +27,7 @@ impl<T: Default> BTNode<T> {
 }
 
 impl<T: Ord + Clone> BinarySearchTree<T> {
-    pub fn findeq(&self, x: &T) -> Option<T> {
+    pub fn find_eq(&self, x: &T) -> Option<T> {
         let mut w = self.r.clone();
         let mut next;
         loop {
@@ -56,7 +56,69 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
         }
     }
     fn add_child(&mut self, p: &Tree<T>, u: &Rc<BTNode<T>>) -> bool {
-        todo!()
+        match p {
+            Some(p) => {
+                if *p.x.borrow() < *u.x.borrow() {
+                    p.left.borrow_mut().replace(u.clone());
+                } else if *p.x.borrow() > *u.x.borrow() {
+                    p.right.borrow_mut().replace(u.clone());
+                } else {
+                    return false;
+                }
+                u.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            None => self.r = p.clone(),
+        }
+        self.n += 1;
+        true
+    }
+    fn splice(&mut self, u: Rc<BTNode<T>>) {
+        let s: Tree<T>;
+        let mut p: Tree<T> = None;
+        match *u.left.borrow() {
+            Some(ref l) => s = Some(l.clone()),
+            None => s = u.right.borrow().clone(),
+        }
+        if let Some(r) = &self.r {
+            if Rc::ptr_eq(&u, r) {
+                self.r = s.clone();
+                p = None;
+            } else {
+                p = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+                p.as_ref().map(|p| {
+                    if let Some(ref left) = *p.left.borrow() {
+                        if Rc::ptr_eq(left, &u) {
+                            *p.left.borrow_mut() = s.clone();
+                        } else {
+                            *p.right.borrow_mut() = s.clone();
+                        }
+                    }
+                });
+            }
+        }
+        if let (Some(ref s), Some(ref p)) = (s, p) {
+            s.parent.borrow_mut().replace(Rc::downgrade(&p));
+        }
+        self.n -= 1;
+    }
+    fn remove_u(&mut self, u: Rc<BTNode<T>>) {
+        if u.left.borrow().is_none() || u.right.borrow().is_none() {
+            self.splice(u);
+        } else {
+            let mut w = u.right.borrow().clone();
+            let mut next = None;
+            loop {
+                if let Some(ref w) = w {
+                    match *w.left.borrow() {
+                        Some(ref left) => next = Some(left.clone()),
+                        None => break,
+                    }
+                }
+                w = next.clone();
+            }
+            *u.x.borrow_mut() = w.as_ref().unwrap().x.borrow().clone();
+            self.splice(w.unwrap());
+        }
     }
 }
 
