@@ -31,3 +31,7 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter06 (Binary Trees)
     * [BinaryTree](/chapter06/src/binarytree.rs)
     * [BinarySearchTree](/chapter06/src/binarysearchtree.rs)
+* chapter07 (Random Binary Search Trees)
+    * Treap(*coming soon*)
+* chapter08 (Scapegost Trees)
+    * ScapegoatTree(*coming soon*)
