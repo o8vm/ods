@@ -30,4 +30,4 @@ The following is a list of data structures that have been implemented in Rust.
     * [LinearHashTable](/chapter05/src/linearhashtable.rs)
 * chapter06 (Binary Trees)
     * [BinaryTree](/chapter06/src/binarytree.rs)
-    * BinarySearchTree(*coming soon*)
+    * [BinarySearchTree](/chapter06/src/binarysearchtree.rs)

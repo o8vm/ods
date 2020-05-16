@@ -19,14 +19,37 @@ pub struct BinarySearchTree<T> {
 }
 
 impl<T: Default> BTNode<T> {
-    pub fn new() -> Self {
+    pub fn new(x: T) -> Self {
         Self {
-            ..Default::default()
+            x: RefCell::new(x),
+            .. Default::default()
         }
     }
 }
 
 impl<T: Ord + Clone> BinarySearchTree<T> {
+    pub fn new() -> Self {
+        Self {
+            n: 0,
+            r: None,
+        }
+    }
+    fn height_u(u: &Tree<T>) -> i32 {
+        match u {
+            Some(n) => {
+                1 + std::cmp::max(
+                    Self::height_u(&n.left.borrow()),
+                    Self::height_u(&n.right.borrow()),
+                )
+            }
+            None => -1,
+        }
+    }
+
+    pub fn height(&self) -> i32 {
+        Self::height_u(&self.r)
+    }
+
     pub fn find_eq(&self, x: &T) -> Option<T> {
         let mut w = self.r.clone();
         let mut next;
@@ -42,51 +65,59 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
     }
     fn find_last(&self, x: &T) -> Tree<T> {
         let mut w = self.r.clone();
-        let mut prev;
+        let mut prev = None;
         let mut next;
         loop {
-            prev = w.clone();
             match w {
-                Some(ref u) if x < &*u.x.borrow() => next = u.left.borrow().clone(),
-                Some(ref u) if x > &*u.x.borrow() => next = u.right.borrow().clone(),
-                Some(ref u) if x == &*u.x.borrow() => break Some(u.clone()),
+                Some(ref u) => {
+                    prev = w.clone();
+                    if x < &*u.x.borrow() {
+                        next = u.left.borrow().clone();
+                    } else if x > &*u.x.borrow() {
+                        next = u.right.borrow().clone();
+                    } else {
+                        break Some(u.clone())
+                    }
+                },
                 _ => break prev,
             }
             w = next;
         }
     }
-    fn add_child(&mut self, p: &Tree<T>, u: &Rc<BTNode<T>>) -> bool {
+    fn add_child(&mut self, p: &Tree<T>, u: Rc<BTNode<T>>) -> bool {
         match p {
             Some(p) => {
-                if *p.x.borrow() < *u.x.borrow() {
+                if *p.x.borrow() > *u.x.borrow() {
                     p.left.borrow_mut().replace(u.clone());
-                } else if *p.x.borrow() > *u.x.borrow() {
+                } else if *p.x.borrow() < *u.x.borrow() {
                     p.right.borrow_mut().replace(u.clone());
                 } else {
                     return false;
                 }
                 u.parent.borrow_mut().replace(Rc::downgrade(p));
             }
-            None => self.r = p.clone(),
+            None => self.r = Some(u),
         }
         self.n += 1;
         true
     }
-    fn splice(&mut self, u: Rc<BTNode<T>>) {
+    fn splice(&mut self, u: Rc<BTNode<T>>) -> Option<T> {
         let s: Tree<T>;
         let mut p: Tree<T> = None;
-        match *u.left.borrow() {
-            Some(ref l) => s = Some(l.clone()),
-            None => s = u.right.borrow().clone(),
+        if u.left.borrow().is_some() {
+            s = u.left.borrow_mut().take();
+        } else {
+            s = u.right.borrow_mut().take();
         }
         if let Some(r) = &self.r {
             if Rc::ptr_eq(&u, r) {
                 self.r = s.clone();
                 p = None;
             } else {
-                p = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+                p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
                 p.as_ref().map(|p| {
-                    if let Some(ref left) = *p.left.borrow() {
+                    let left = p.left.borrow().clone();
+                    if let Some(ref left) = left {
                         if Rc::ptr_eq(left, &u) {
                             *p.left.borrow_mut() = s.clone();
                         } else {
@@ -96,28 +127,31 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
                 });
             }
         }
-        if let (Some(ref s), Some(ref p)) = (s, p) {
-            s.parent.borrow_mut().replace(Rc::downgrade(&p));
+        match (s, p) {
+            (Some(ref s), Some(ref p)) => {s.parent.borrow_mut().replace(Rc::downgrade(p));},
+            (Some(ref s), None) => {s.parent.borrow_mut().take();},
+            _ => ()
         }
         self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
     }
-    fn remove_u(&mut self, u: Rc<BTNode<T>>) {
+    fn remove_u(&mut self, u: Rc<BTNode<T>>) -> Option<T> {
         if u.left.borrow().is_none() || u.right.borrow().is_none() {
-            self.splice(u);
+            self.splice(u)
         } else {
             let mut w = u.right.borrow().clone();
-            let mut next = None;
             loop {
+                let mut next = None;
                 if let Some(ref w) = w {
                     match *w.left.borrow() {
                         Some(ref left) => next = Some(left.clone()),
                         None => break,
                     }
                 }
-                w = next.clone();
+                w = next;
             }
-            *u.x.borrow_mut() = w.as_ref().unwrap().x.borrow().clone();
-            self.splice(w.unwrap());
+            u.x.swap(&w.as_ref().unwrap().x);
+            self.splice(w.unwrap())
         }
     }
 }
@@ -130,13 +164,15 @@ where
         self.n
     }
     fn add(&mut self, x: T) -> bool {
-        let p = self.find_last(&x);
-        let u = Rc::new(BTNode::<T>::new());
-        *u.x.borrow_mut() = x;
-        self.add_child(&p, &u)
+        let p = self.find_last(&x); 
+        let u = Rc::new(BTNode::<T>::new(x));
+        self.add_child(&p, u)
     }
-    fn remove(&mut self, _: &T) -> std::option::Option<T> {
-        todo!()
+    fn remove(&mut self, x: &T) -> Option<T> {
+        match self.find_last(x) {
+            Some(u) if &*u.x.borrow() == x => self.remove_u(u),
+            _ => None,
+        }
     }
     fn find(&self, x: &T) -> Option<T> {
         let mut w = self.r.clone();
@@ -159,5 +195,33 @@ where
             }
             w = next;
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chapter01::interface::SSet;
+    #[test]
+    fn test_binarysearchtree() {
+        let mut binarysearchtree = BinarySearchTree::<u32>::new();
+        binarysearchtree.add(7);
+        binarysearchtree.add(3);
+        binarysearchtree.add(11);
+        binarysearchtree.add(1);
+        binarysearchtree.add(5);
+        binarysearchtree.add(9);
+        binarysearchtree.add(13);
+        binarysearchtree.add(4);
+        binarysearchtree.add(6);
+        binarysearchtree.add(8);
+        binarysearchtree.add(12);
+        binarysearchtree.add(14);
+        assert_eq!(false, binarysearchtree.add(8));
+        assert_eq!(Some(6), binarysearchtree.remove(&6));
+        assert_eq!(Some(9), binarysearchtree.remove(&9));
+        assert_eq!(Some(11), binarysearchtree.remove(&11));
+        assert_eq!(None, binarysearchtree.remove(&11));
+        //println!("{:?}", binarysearchtree);
     }
 }
