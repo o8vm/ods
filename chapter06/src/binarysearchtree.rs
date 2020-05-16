@@ -222,6 +222,8 @@ mod test {
         assert_eq!(Some(9), binarysearchtree.remove(&9));
         assert_eq!(Some(11), binarysearchtree.remove(&11));
         assert_eq!(None, binarysearchtree.remove(&11));
+        assert_eq!(Some(12), binarysearchtree.find(&12));
+        assert_eq!(9, binarysearchtree.size());
         //println!("{:?}", binarysearchtree);
     }
 }
