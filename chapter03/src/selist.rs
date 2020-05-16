@@ -11,7 +11,7 @@ type Loc<T> = (Link<T>, usize);
 pub struct SEList<T> {
     head: Link<T>,
     tail: Wink<T>,
-    len: usize,
+    n: usize,
     b: usize,
 }
 
@@ -41,31 +41,28 @@ impl<T: Default + Clone> SEList<T> {
         Self {
             head: Some(dummy1),
             tail: Some(Rc::downgrade(&dummy2)),
-            len: 0,
+            n: 0,
             b,
         }
     }
 
     fn get_loc(&self, mut i: usize) -> Loc<T> {
         let mut p: Link<T>;
-        if i < self.len / 2 {
-            p = self
-                .head
-                .clone()
-                .and_then(|dummy| dummy.borrow().next.clone());
-            while i >= p.clone().map(|p| p.borrow().block.size()).unwrap() {
-                i -= p.clone().map(|p| p.borrow().block.size()).unwrap();
-                p = p.clone().and_then(|p| p.borrow().next.clone());
+        if i < self.n / 2 {
+            p = self.head.as_ref().and_then(|d| d.borrow().next.clone());
+            while i >= p.as_ref().map(|p| p.borrow().block.size()).unwrap() {
+                i -= p.as_ref().map(|p| p.borrow().block.size()).unwrap();
+                p = p.as_ref().and_then(|p| p.borrow().next.clone());
             }
             (p, i)
         } else {
-            let mut idx = self.len;
-            p = self.tail.clone().and_then(|p| p.upgrade().clone());
+            let mut idx = self.n;
+            p = self.tail.as_ref().and_then(|p| p.upgrade());
             while i < idx {
                 p = p
-                    .clone()
-                    .and_then(|p| p.borrow().prev.clone().and_then(|p| p.upgrade().clone()));
-                idx -= p.clone().map(|p| p.borrow().block.size()).unwrap();
+                    .as_ref()
+                    .and_then(|p| p.borrow().prev.as_ref().and_then(|p| p.upgrade()));
+                idx -= p.as_ref().map(|p| p.borrow().block.size()).unwrap();
             }
             (p, i - idx)
         }
@@ -73,80 +70,70 @@ impl<T: Default + Clone> SEList<T> {
 
     fn add_before(&mut self, w: Link<T>) -> Link<T> {
         let u = Node::new(self.b);
-        u.borrow_mut().prev = w.clone().and_then(|p| p.borrow().prev.clone());
-        u.borrow_mut().next = w;
-        u.borrow_mut()
-            .next
-            .clone()
+        u.borrow_mut().prev = w.as_ref().and_then(|p| p.borrow().prev.clone());
+        w.as_ref()
             .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
-        u.borrow_mut().prev.clone().and_then(|p| {
-            p.upgrade()
-                .clone()
-                .map(|p| p.borrow_mut().next = Some(u.clone()))
-        });
+        u.borrow_mut().next = w;
+        u.borrow()
+            .prev
+            .as_ref()
+            .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = Some(u.clone())));
         Some(u)
     }
 
     fn remove_link(&mut self, w: Link<T>) {
-        let prev = w.clone().and_then(|p| p.borrow_mut().prev.take());
+        let prev = w.as_ref().and_then(|p| p.borrow_mut().prev.take());
         let next = w.and_then(|p| p.borrow_mut().next.take());
-        prev.clone().and_then(|p| {
-            p.upgrade()
-                .clone()
-                .map(|p| p.borrow_mut().next = next.clone())
-        });
+        prev.as_ref()
+            .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = next.clone()));
         next.map(|p| p.borrow_mut().prev = prev);
     }
 
-    fn add_last(&mut self, value: T) {
+    fn add_last(&mut self, x: T) {
         let mut last = self
             .tail
-            .clone()
-            .and_then(|p| p.upgrade().clone())
-            .and_then(|p| p.borrow().prev.clone().and_then(|p| p.upgrade().clone()));
-        if last.clone().and_then(|p| p.borrow().prev.clone()).is_none()
-            || last.clone().map(|p| p.borrow().block.size()).unwrap() == self.b + 1
-        {
-            last = self.add_before(self.tail.clone().and_then(|p| p.upgrade()));
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .and_then(|p| p.borrow().prev.as_ref().and_then(|p| p.upgrade()));
+        if let Some(ref p) = last {
+            if p.borrow().prev.is_none() || p.borrow().block.size() == self.b + 1 {
+                last = self.add_before(self.tail.as_ref().and_then(|p| p.upgrade()));
+            }
+            last.map(|p| {
+                let s = p.borrow().block.size();
+                p.borrow_mut().block.add(s, x);
+                self.n += 1;
+            });
         }
-        last.map(|p| {
-            let size = p.borrow().block.size();
-            p.borrow_mut().block.add(size, value);
-        });
-        self.len += 1;
     }
 
     fn spread(&mut self, u: Link<T>) {
         let mut w = u.clone();
         for _j in 0..self.b {
-            w = w.clone().and_then(|p| p.borrow().next.clone());
+            w = w.as_ref().and_then(|p| p.borrow().next.clone());
         }
         w = self.add_before(w);
         while !Rc::ptr_eq(w.as_ref().unwrap(), u.as_ref().unwrap()) {
-            while w.clone().map(|p| p.borrow().block.size()).unwrap() < self.b {
-                w.clone().map(|p| {
-                    let link = p.borrow().prev.clone().and_then(|p| p.upgrade().clone());
-                    let size = link.clone().map(|p| p.borrow().block.size()).unwrap();
-                    let x = link
-                        .and_then(|p| p.borrow_mut().block.remove(size - 1))
-                        .unwrap();
+            while w.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b {
+                w.as_ref().map(|p| {
+                    let l = p.borrow().prev.as_ref().and_then(|p| p.upgrade());
+                    let s = l.as_ref().map(|p| p.borrow().block.size()).unwrap();
+                    let x = l.and_then(|p| p.borrow_mut().block.remove(s - 1)).unwrap();
                     p.borrow_mut().block.add(0, x);
                 });
             }
-            w = w
-                .and_then(|p| p.borrow().prev.clone())
-                .and_then(|p| p.upgrade());
+            w = w.and_then(|p| p.borrow().prev.as_ref().and_then(|p| p.upgrade()));
         }
     }
     fn gather(&mut self, u: Link<T>) {
-        let mut w = u.clone();
+        let mut w = u;
         for _j in 0..self.b - 1 {
-            while w.clone().map(|p| p.borrow().block.size()).unwrap() < self.b {
-                w.clone().map(|p| {
-                    let link = p.borrow().next.clone();
-                    let size = p.borrow().block.size();
-                    let x = link.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
-                    p.borrow_mut().block.add(size, x);
+            while w.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b {
+                w.as_ref().map(|p| {
+                    let l = p.borrow().next.clone();
+                    let s = p.borrow().block.size();
+                    let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
+                    p.borrow_mut().block.add(s, x);
                 });
             }
             w = w.and_then(|p| p.borrow().next.clone());
@@ -157,36 +144,38 @@ impl<T: Default + Clone> SEList<T> {
 
 impl<T: Clone + Default> List<T> for SEList<T> {
     fn size(&self) -> usize {
-        self.len
+        self.n
     }
     fn get(&self, index: usize) -> Option<T> {
-        if self.len == 0 || index > self.len {
+        if self.n == 0 || index > self.n {
             None
         } else {
             let (p, j) = self.get_loc(index);
             p.and_then(|p| p.borrow().block.get(j))
         }
     }
-    fn set(&mut self, index: usize, value: T) -> Option<T> {
-        if self.len > 0 && index < self.len {
-            let (p, j) = self.get_loc(index);
-            p.and_then(|p| p.borrow_mut().block.set(j, value))
+    fn set(&mut self, i: usize, x: T) -> Option<T> {
+        if self.n > 0 && i < self.n {
+            let (p, j) = self.get_loc(i);
+            p.and_then(|p| p.borrow_mut().block.set(j, x))
         } else {
             None
         }
     }
-    fn add(&mut self, index: usize, value: T) {
-        if index == self.len {
-            self.add_last(value);
+    fn add(&mut self, i: usize, x: T) {
+        if i == self.n {
+            self.add_last(x);
             return;
         }
-        let (mut u, j) = self.get_loc(index);
+        let (mut u, j) = self.get_loc(i);
         let v = u.clone();
         let mut r = 0;
         while r < self.b
-            && u.clone().and_then(|p| p.borrow().next.clone()).is_some()
-            && u.clone().and_then(|p| p.borrow().prev.clone()).is_some()
-            && u.clone().map(|p| p.borrow().block.size()).unwrap() == self.b + 1
+            && u.as_ref()
+                .map(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
+                .filter(|b| b == &true)
+                .is_some()
+            && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b + 1
         {
             u = u.and_then(|p| p.borrow().next.clone());
             r += 1;
@@ -195,35 +184,38 @@ impl<T: Clone + Default> List<T> for SEList<T> {
             self.spread(v.clone());
             u = v.clone();
         }
-        if u.clone().and_then(|p| p.borrow().next.clone()).is_none() {
+        if u.as_ref()
+            .map(|p| p.borrow().next.is_none())
+            .filter(|b| b == &true)
+            .is_some()
+        {
             u = self.add_before(u);
         }
         while !Rc::ptr_eq(u.as_ref().unwrap(), v.as_ref().unwrap()) {
-            u.clone().map(|p| {
-                let link = p.borrow().prev.clone().and_then(|p| p.upgrade().clone());
-                let size = link.clone().map(|p| p.borrow().block.size()).unwrap();
-                let x = link
-                    .and_then(|p| p.borrow_mut().block.remove(size - 1))
-                    .unwrap();
+            u.as_ref().map(|p| {
+                let l = p.borrow().prev.as_ref().and_then(|p| p.upgrade());
+                let s = l.as_ref().map(|p| p.borrow().block.size()).unwrap();
+                let x = l.and_then(|p| p.borrow_mut().block.remove(s - 1)).unwrap();
                 p.borrow_mut().block.add(0, x);
             });
             u = u
                 .and_then(|p| p.borrow().prev.clone())
                 .and_then(|p| p.upgrade());
         }
-        u.map(|p| p.borrow_mut().block.add(j, value));
-        self.len += 1;
+        u.map(|p| p.borrow_mut().block.add(j, x));
+        self.n += 1;
     }
 
-    fn remove(&mut self, index: usize) -> Option<T> {
-        let (mut u, j) = self.get_loc(index);
+    fn remove(&mut self, i: usize) -> Option<T> {
+        let (mut u, j) = self.get_loc(i);
         let v = u.clone();
-        let _value = u.clone().and_then(|p| p.borrow().block.get(j));
         let mut r = 0;
         while r < self.b
-            && u.clone().and_then(|p| p.borrow().next.clone()).is_some()
-            && u.clone().and_then(|p| p.borrow().prev.clone()).is_some()
-            && u.clone().map(|p| p.borrow().block.size()).unwrap() == self.b - 1
+            && u.as_ref()
+                .map(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
+                .filter(|b| b == &true)
+                .is_some()
+            && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b - 1
         {
             u = u.and_then(|p| p.borrow().next.clone());
             r += 1;
@@ -232,26 +224,26 @@ impl<T: Clone + Default> List<T> for SEList<T> {
             self.gather(v.clone());
         }
         u = v.clone();
-        let value = u.clone().and_then(|p| p.borrow_mut().block.remove(j));
-        while u.clone().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
-            && u.clone()
+        let x = u.as_ref().and_then(|p| p.borrow_mut().block.remove(j));
+        while u.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
+            && u.as_ref()
                 .and_then(|p| p.borrow().next.clone())
                 .and_then(|p| p.borrow().next.clone())
                 .is_some()
         {
             u.clone().map(|p| {
-                let link = p.borrow().next.clone();
-                let size = p.borrow().block.size();
-                let x = link.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
-                p.borrow_mut().block.add(size, x);
+                let l = p.borrow().next.clone();
+                let s = p.borrow().block.size();
+                let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
+                p.borrow_mut().block.add(s, x);
             });
             u = u.and_then(|p| p.borrow().next.clone());
         }
-        if u.clone().map(|p| p.borrow().block.size()).unwrap() == 0 {
+        if u.as_ref().map(|p| p.borrow().block.size()).unwrap() == 0 {
             self.remove_link(u);
         }
-        self.len -= 1;
-        value
+        self.n -= 1;
+        x
     }
 }
 
