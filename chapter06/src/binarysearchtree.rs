@@ -22,17 +22,14 @@ impl<T: Default> BSTNode<T> {
     pub fn new(x: T) -> Self {
         Self {
             x: RefCell::new(x),
-            .. Default::default()
+            ..Default::default()
         }
     }
 }
 
 impl<T: Ord + Clone> BinarySearchTree<T> {
     pub fn new() -> Self {
-        Self {
-            n: 0,
-            r: None,
-        }
+        Self { n: 0, r: None }
     }
     fn height_u(u: &Tree<T>) -> i32 {
         match u {
@@ -76,9 +73,9 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
                     } else if x > &*u.x.borrow() {
                         next = u.right.borrow().clone();
                     } else {
-                        break Some(u.clone())
+                        break Some(u.clone());
                     }
-                },
+                }
                 _ => break prev,
             }
             w = next;
@@ -128,9 +125,13 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
             }
         }
         match (s, p) {
-            (Some(ref s), Some(ref p)) => {s.parent.borrow_mut().replace(Rc::downgrade(p));},
-            (Some(ref s), None) => {s.parent.borrow_mut().take();},
-            _ => ()
+            (Some(ref s), Some(ref p)) => {
+                s.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            (Some(ref s), None) => {
+                s.parent.borrow_mut().take();
+            }
+            _ => (),
         }
         self.n -= 1;
         Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
@@ -164,7 +165,7 @@ where
         self.n
     }
     fn add(&mut self, x: T) -> bool {
-        let p = self.find_last(&x); 
+        let p = self.find_last(&x);
         let u = Rc::new(BSTNode::<T>::new(x));
         self.add_child(&p, u)
     }
