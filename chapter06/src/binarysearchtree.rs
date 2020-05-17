@@ -2,23 +2,23 @@ use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
-type Tree<T> = Option<Rc<BTNode<T>>>;
+type Tree<T> = Option<Rc<BSTNode<T>>>;
 
 #[derive(Clone, Debug, Default)]
-pub struct BTNode<T> {
+pub struct BSTNode<T> {
     x: RefCell<T>,
-    left: RefCell<Option<Rc<BTNode<T>>>>,
-    right: RefCell<Option<Rc<BTNode<T>>>>,
-    parent: RefCell<Option<Weak<BTNode<T>>>>,
+    left: RefCell<Option<Rc<BSTNode<T>>>>,
+    right: RefCell<Option<Rc<BSTNode<T>>>>,
+    parent: RefCell<Option<Weak<BSTNode<T>>>>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct BinarySearchTree<T> {
     n: usize,
-    r: Option<Rc<BTNode<T>>>,
+    r: Option<Rc<BSTNode<T>>>,
 }
 
-impl<T: Default> BTNode<T> {
+impl<T: Default> BSTNode<T> {
     pub fn new(x: T) -> Self {
         Self {
             x: RefCell::new(x),
@@ -84,7 +84,7 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
             w = next;
         }
     }
-    fn add_child(&mut self, p: &Tree<T>, u: Rc<BTNode<T>>) -> bool {
+    fn add_child(&mut self, p: &Tree<T>, u: Rc<BSTNode<T>>) -> bool {
         match p {
             Some(p) => {
                 if *p.x.borrow() > *u.x.borrow() {
@@ -101,7 +101,7 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
         self.n += 1;
         true
     }
-    fn splice(&mut self, u: Rc<BTNode<T>>) -> Option<T> {
+    fn splice(&mut self, u: Rc<BSTNode<T>>) -> Option<T> {
         let s: Tree<T>;
         let mut p: Tree<T> = None;
         if u.left.borrow().is_some() {
@@ -135,7 +135,7 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
         self.n -= 1;
         Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
     }
-    fn remove_u(&mut self, u: Rc<BTNode<T>>) -> Option<T> {
+    fn remove_u(&mut self, u: Rc<BSTNode<T>>) -> Option<T> {
         if u.left.borrow().is_none() || u.right.borrow().is_none() {
             self.splice(u)
         } else {
@@ -165,7 +165,7 @@ where
     }
     fn add(&mut self, x: T) -> bool {
         let p = self.find_last(&x); 
-        let u = Rc::new(BTNode::<T>::new(x));
+        let u = Rc::new(BSTNode::<T>::new(x));
         self.add_child(&p, u)
     }
     fn remove(&mut self, x: &T) -> Option<T> {
