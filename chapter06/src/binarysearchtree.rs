@@ -114,10 +114,11 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
                 p.as_ref().map(|p| {
                     let left = p.left.borrow().clone();
-                    if let Some(ref left) = left {
-                        if Rc::ptr_eq(left, &u) {
+                    match left {
+                        Some(ref left) if Rc::ptr_eq(left, &u) => {
                             *p.left.borrow_mut() = s.clone();
-                        } else {
+                        }
+                        _ => {
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
