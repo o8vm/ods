@@ -19,19 +19,33 @@ pub struct Treap<T> {
     r: Option<Rc<TreapNode<T>>>,
 }
 
-impl<T> TreapNode<T> {}
+impl<T: Default> TreapNode<T> {
+    pub fn new(x: T) -> Self {
+        Self {
+            x: RefCell::new(x),
+            ..Default::default()
+        }
+    }
+}
 
-impl<T> Treap<T> {
+impl<T> Treap<T>
+where
+    T: Ord + Clone,
+{
+    pub fn new() -> Self {
+        Self { n: 0, r: None }
+    }
     fn rotate_left(&mut self, u: &Rc<TreapNode<T>>) {
-        let w = u.right.borrow_mut().take().unwrap(); // 絶対に None ではない
+        let w = u.right.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
         p.map(|p| {
             let left = p.left.borrow().clone();
-            if let Some(ref left) = left {
-                if Rc::ptr_eq(left, u) {
+            match left {
+                Some(ref left) if Rc::ptr_eq(left, u) => {
                     p.left.borrow_mut().replace(w.clone());
-                } else {
+                }
+                _ => {
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
@@ -44,19 +58,19 @@ impl<T> Treap<T> {
         w.left.borrow_mut().replace(u.clone());
         if Rc::ptr_eq(u, self.r.as_ref().unwrap()) {
             self.r.replace(w);
-            // self.r.as_mut().map(|r| *r.parent.borrow_mut() = None);//<=いらないとおもう。
         }
     }
     fn rotate_right(&mut self, u: &Rc<TreapNode<T>>) {
-        let w = u.left.borrow_mut().take().unwrap(); // 絶対に None ではない
+        let w = u.left.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
         p.map(|p| {
             let left = p.left.borrow().clone();
-            if let Some(ref left) = left {
-                if Rc::ptr_eq(left, u) {
+            match left {
+                Some(ref left) if Rc::ptr_eq(left, u) => {
                     p.left.borrow_mut().replace(w.clone());
-                } else {
+                }
+                _ => {
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
@@ -69,26 +83,198 @@ impl<T> Treap<T> {
         w.right.borrow_mut().replace(u.clone());
         if Rc::ptr_eq(u, self.r.as_ref().unwrap()) {
             self.r.replace(w);
-            // self.r.as_mut().map(|r| *r.parent.borrow_mut() = None);//<=いらないとおもう。
         }
     }
     fn bubbleup(&mut self, u: &Rc<TreapNode<T>>) {
         loop {
-            match u.parent.borrow().as_ref().and_then(|p| p.upgrade()) {
+            let parent = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+            match parent {
                 Some(ref p) if *p.p.borrow() > *u.p.borrow() => {
-                    p.right.borrow().as_ref().map(|r| {
-                        if Rc::ptr_eq(r, u) {
-                            self.rotate_left(p);
-                        } else {
-                            self.rotate_right(p);
-                        }
-                    });
+                    let right = p.right.borrow().clone();
+                    match right {
+                        Some(ref r) if Rc::ptr_eq(r, u) => self.rotate_left(p),
+                        _ => self.rotate_right(p),
+                    }
                 }
                 _ => break,
             }
         }
-        if u.parent.borrow().is_some() {
+        if u.parent.borrow().is_none() {
             self.r.replace(u.clone());
         }
+    }
+    fn find_last(&self, x: &T) -> Tree<T> {
+        let mut w = self.r.clone();
+        let mut prev = None;
+        let mut next;
+        loop {
+            match w {
+                Some(ref u) => {
+                    prev = w.clone();
+                    if x < &*u.x.borrow() {
+                        next = u.left.borrow().clone();
+                    } else if x > &*u.x.borrow() {
+                        next = u.right.borrow().clone();
+                    } else {
+                        break Some(u.clone());
+                    }
+                }
+                _ => break prev,
+            }
+            w = next;
+        }
+    }
+    fn add_child(&mut self, p: &Tree<T>, u: Rc<TreapNode<T>>) -> bool {
+        match p {
+            Some(p) => {
+                if *p.x.borrow() > *u.x.borrow() {
+                    p.left.borrow_mut().replace(u.clone());
+                } else if *p.x.borrow() < *u.x.borrow() {
+                    p.right.borrow_mut().replace(u.clone());
+                } else {
+                    return false;
+                }
+                u.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            None => self.r = Some(u),
+        }
+        self.n += 1;
+        true
+    }
+    fn add_u(&mut self, u: Rc<TreapNode<T>>) -> bool {
+        let p = self.find_last(&*u.x.borrow());
+        self.add_child(&p, u)
+    }
+    fn splice(&mut self, u: Rc<TreapNode<T>>) -> Option<T> {
+        let s: Tree<T>;
+        let mut p: Tree<T> = None;
+        if u.left.borrow().is_some() {
+            s = u.left.borrow_mut().take();
+        } else {
+            s = u.right.borrow_mut().take();
+        }
+        if let Some(r) = &self.r {
+            if Rc::ptr_eq(&u, r) {
+                self.r = s.clone();
+                p = None;
+            } else {
+                p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
+                p.as_ref().map(|p| {
+                    let left = p.left.borrow().clone();
+                    match left {
+                        Some(ref left) if Rc::ptr_eq(left, &u) => {
+                            *p.left.borrow_mut() = s.clone();
+                        }
+                        _ => {
+                            *p.right.borrow_mut() = s.clone();
+                        }
+                    }
+                });
+            }
+        }
+        match (s, p) {
+            (Some(ref s), Some(ref p)) => {
+                s.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            (Some(ref s), None) => {
+                s.parent.borrow_mut().take();
+            }
+            _ => (),
+        }
+        self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
+    }
+    fn trickle_down(&mut self, u: &Rc<TreapNode<T>>) {
+        while u.left.borrow().is_some() || u.right.borrow().is_some() {
+            let left = u.left.borrow().clone();
+            let right = u.right.borrow().clone();
+            match (left, right) {
+                (None, _) => self.rotate_left(u),
+                (_, None) => self.rotate_right(u),
+                (Some(l), Some(r)) if *l.p.borrow() < *r.p.borrow() => self.rotate_right(u),
+                _ => self.rotate_left(u),
+            }
+            if Rc::ptr_eq(u, self.r.as_ref().unwrap()) {
+                let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+                self.r = p;
+            }
+        }
+    }
+}
+
+impl<T> SSet<T> for Treap<T>
+where
+    T: Ord + Clone + Default,
+{
+    fn size(&self) -> usize {
+        self.n
+    }
+    fn add(&mut self, x: T) -> bool {
+        let u = Rc::new(TreapNode::new(x));
+        *u.p.borrow_mut() = rand::random();
+        if self.add_u(u.clone()) {
+            self.bubbleup(&u);
+            true
+        } else {
+            false
+        }
+    }
+    fn remove(&mut self, x: &T) -> Option<T> {
+        match self.find_last(x) {
+            Some(u) if &*u.x.borrow() == x => {
+                self.trickle_down(&u);
+                self.splice(u)
+            }
+            _ => None,
+        }
+    }
+    fn find(&self, x: &T) -> Option<T> {
+        let mut w = self.r.clone();
+        let mut z: Tree<T> = None;
+        let mut next;
+        loop {
+            match w {
+                Some(ref u) if x < &*u.x.borrow() => {
+                    z = w.clone();
+                    next = u.left.borrow().clone()
+                }
+                Some(ref u) if x > &*u.x.borrow() => next = u.right.borrow().clone(),
+                Some(ref u) if x == &*u.x.borrow() => break Some(u.x.borrow().clone()),
+                _ => {
+                    break match z {
+                        Some(z) => Some(z.x.borrow().clone()),
+                        None => None,
+                    }
+                }
+            }
+            w = next;
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chapter01::interface::SSet;
+    #[test]
+    fn test_treap() {
+        let mut treap = Treap::<u32>::new();
+        treap.add(3);
+        treap.add(1);
+        treap.add(5);
+        treap.add(0);
+        treap.add(2);
+        treap.add(4);
+        treap.add(9);
+        treap.add(7);
+        treap.add(6);
+        treap.add(8);
+        assert_eq!(false, treap.add(8));
+        assert_eq!(Some(3), treap.find(&3));
+        assert_eq!(None, treap.find(&10));
+        assert_eq!(Some(9), treap.remove(&9));
+        assert_eq!(Some(8), treap.remove(&8));
+        assert_eq!(None, treap.remove(&8));
+        //println!("{:?}", treap);
     }
 }
