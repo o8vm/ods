@@ -101,47 +101,47 @@ where
             }
         }
     }
-    // this blcok should be rewrite
     fn add_with_depth(&mut self, u: Rc<BSTNode<T>>) -> i32 {
         let mut w = self.r.clone();
         if let None = w {
-            self.r = Some(u);
-            self.n += 1;
-            self.q += 1;
-            return 0
+            self.r = Some(u.clone());
         }
-        let mut done = false;
         let mut d = 0;
+        let mut next;
         loop {
-            let mut next = None;
-            if let Some(ref wi) = w {
-                if &*u.x.borrow() < &*wi.x.borrow() {
-                    match &*wi.left.borrow() {
-                        None => {
-                            *wi.left.borrow_mut() = Some(u.clone());
-                            *u.parent.borrow_mut() = Some(Rc::downgrade(wi));
-                            done = true;
-                        },
-                        Some(left) => next = Some(left.clone()),
+            match w {
+                Some(ref w) => {
+                    if &*u.x.borrow() < &*w.x.borrow() {
+                        match &*w.left.borrow() {
+                            None => {
+                                *w.left.borrow_mut() = Some(u.clone());
+                                *u.parent.borrow_mut() = Some(Rc::downgrade(w));
+                                next = None;
+                            },
+                            Some(left) => next = Some(left.clone()),
+                        }
+                    } else if &*u.x.borrow() > &*w.x.borrow() {
+                        match &*w.right.borrow() {
+                            None => {
+                                *w.right.borrow_mut() = Some(u.clone());
+                                *u.parent.borrow_mut() = Some(Rc::downgrade(w));
+                                next = None;
+                            },
+                            Some(right) => next = Some(right.clone()),
+                        }
+                    } else {
+                        return -1
                     }
-                } else if &*u.x.borrow() > &*wi.x.borrow() {
-                    if wi.left.borrow().is_none() {
-                        *wi.right.borrow_mut() = Some(u.clone());
-                        *u.parent.borrow_mut() = Some(Rc::downgrade(wi));
-                        done = true;
-                    }
-                    next = wi.right.borrow().clone();
-                } else {
-                    return -1
+                    d += 1;
+                },
+                None => {
+                    self.n += 1;
+                    self.q += 1;
+                    break d
                 }
-                d += 1;
-                if !done { break }
             }
             w = next;
         }
-        self.n += 1;
-        self.q += 1;
-        d
     }
 }
 
