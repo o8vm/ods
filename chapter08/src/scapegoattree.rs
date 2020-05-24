@@ -31,6 +31,9 @@ impl<T> ScapegoatTree<T>
 where
     T: Ord + Clone,
 {
+    pub fn new() -> Self {
+        Self { n: 0, q: 0, r: None }
+    }
     fn size_u(u: &Tree<T>) -> usize {
         match u {
             Some(n) => 1 + Self::size_u(&n.left.borrow()) + Self::size_u(&n.right.borrow()),
@@ -134,7 +137,8 @@ where
             match w {
                 Some(ref w) => {
                     if &*u.x.borrow() < &*w.x.borrow() {
-                        match &*w.left.borrow() {
+                        let left = w.left.borrow().clone();
+                        match left {
                             None => {
                                 *w.left.borrow_mut() = Some(u.clone());
                                 *u.parent.borrow_mut() = Some(Rc::downgrade(w));
@@ -143,7 +147,8 @@ where
                             Some(left) => next = Some(left.clone()),
                         }
                     } else if &*u.x.borrow() > &*w.x.borrow() {
-                        match &*w.right.borrow() {
+                        let right = w.right.borrow().clone();
+                        match right {
                             None => {
                                 *w.right.borrow_mut() = Some(u.clone());
                                 *u.parent.borrow_mut() = Some(Rc::downgrade(w));
@@ -248,7 +253,7 @@ where
                 .and_then(|w| w.parent.borrow().as_ref().and_then(|wp| wp.upgrade()));
             let mut a = Self::size_u(&w);
             let mut b = Self::size_u(&wp);
-            while 3 * a < 2 * b {
+            while 3 * a <= 2 * b {
                 w = wp;
                 wp = w
                     .as_ref()
@@ -299,5 +304,62 @@ where
             }
             w = next;
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chapter01::interface::SSet;
+    #[test]
+    fn test_scapegoattree() {
+        let mut scapegoattree = ScapegoatTree::<u32>::new();
+        scapegoattree.add(9);
+        scapegoattree.add(8);
+        scapegoattree.add(10);
+        scapegoattree.add(7);
+        scapegoattree.add(11);
+        scapegoattree.add(3);
+        scapegoattree.add(1);
+        scapegoattree.add(6);
+        scapegoattree.add(0);
+        scapegoattree.add(4);
+        scapegoattree.add(5);
+        let u = scapegoattree.find_last(&4).unwrap();
+        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        assert_eq!(8, *p.x.borrow());
+        assert_eq!(1, *u.left.borrow().as_ref().unwrap().x.borrow());
+        assert_eq!(6, *u.right.borrow().as_ref().unwrap().x.borrow());
+        let u = scapegoattree.find_last(&1).unwrap();
+        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        assert_eq!(4, *p.x.borrow());
+        assert_eq!(0, *u.left.borrow().as_ref().unwrap().x.borrow());
+        assert_eq!(3, *u.right.borrow().as_ref().unwrap().x.borrow());
+        let u = scapegoattree.find_last(&6).unwrap();
+        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        assert_eq!(4, *p.x.borrow());
+        assert_eq!(5, *u.left.borrow().as_ref().unwrap().x.borrow());
+        assert_eq!(7, *u.right.borrow().as_ref().unwrap().x.borrow());
+        let mut scapegoattree = ScapegoatTree::<u32>::new();
+        scapegoattree.add(9);
+        scapegoattree.add(8);
+        scapegoattree.add(10);
+        scapegoattree.add(7);
+        scapegoattree.add(11);
+        scapegoattree.add(3);
+        scapegoattree.add(1);
+        scapegoattree.add(6);
+        scapegoattree.add(0);
+        scapegoattree.add(4);
+        scapegoattree.add(5);
+        assert_eq!(Some(5), scapegoattree.remove(&5));
+        assert_eq!(None, scapegoattree.remove(&5));
+        assert_eq!(Some(8), scapegoattree.remove(&8));
+        assert_eq!(None, scapegoattree.remove(&8));
+        assert_eq!(Some(9), scapegoattree.remove(&9));
+        assert_eq!(Some(10), scapegoattree.remove(&10));
+        assert_eq!(Some(4), scapegoattree.remove(&4));
+        assert_eq!(Some(1), scapegoattree.remove(&1));
+        println!("{:?}", scapegoattree);
     }
 }

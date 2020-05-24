@@ -34,6 +34,6 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter07 (Random Binary Search Trees)
     * [Treap](/chapter07/src/treap.rs)
 * chapter08 (Scapegoat Trees)
-    * ScapegoatTree(*coming soon*)
+    * [ScapegoatTree](/chapter08/src/scapegoattree.rs)
 * chapter09 (Red-Black Trees)
     * RedBlackTree(*coming soon*)
