@@ -21,6 +21,7 @@ pub struct ScapegoatTree<T> {
 impl<T: Default> BSTNode<T> {
     pub fn new(x: T) -> Self {
         Self {
+            x: RefCell::new(x),
             ..Default::default()
         }
     }
@@ -36,9 +37,30 @@ where
             None => 0,
         }
     }
-    fn build_balanced(mut a: &[Tree<T>], i: usize, ns: usize) -> Tree<T> {
+    fn find_last(&self, x: &T) -> Tree<T> {
+        let mut w = self.r.clone();
+        let mut prev = None;
+        let mut next;
+        loop {
+            match w {
+                Some(ref u) => {
+                    prev = w.clone();
+                    if x < &*u.x.borrow() {
+                        next = u.left.borrow().clone();
+                    } else if x > &*u.x.borrow() {
+                        next = u.right.borrow().clone();
+                    } else {
+                        break Some(u.clone());
+                    }
+                }
+                _ => break prev,
+            }
+            w = next;
+        }
+    }
+    fn build_balanced(a: &[Tree<T>], i: usize, ns: usize) -> Tree<T> {
         if ns == 0 {
-            return None
+            return None;
         }
         let m = ns / 2;
         let elem = a[i + m].clone();
@@ -68,24 +90,24 @@ where
                 self.r.as_ref().map(|r| {
                     r.parent.borrow_mut().take();
                 });
-            },
+            }
             Some(p) => {
                 let right = p.right.borrow().clone();
                 match right {
-                    Some(ref right) if Rc::ptr_eq(right, u.as_ref().unwrap())=> {
+                    Some(ref right) if Rc::ptr_eq(right, u.as_ref().unwrap()) => {
                         *p.right.borrow_mut() = Self::build_balanced(&a, 0, ns);
                         if let Some(right) = &*p.right.borrow() {
                             right.parent.borrow_mut().replace(Rc::downgrade(&p));
                         }
-                    },
+                    }
                     _ => {
                         *p.left.borrow_mut() = Self::build_balanced(&a, 0, ns);
                         if let Some(left) = &*p.left.borrow() {
                             left.parent.borrow_mut().replace(Rc::downgrade(&p));
                         }
-                    },
+                    }
                 }
-            },
+            }
         }
     }
     fn pack_into_array(u: &Tree<T>, a: &mut [Tree<T>], mut i: usize) -> usize {
@@ -101,7 +123,7 @@ where
             }
         }
     }
-    fn add_with_depth(&mut self, u: Rc<BSTNode<T>>) -> i32 {
+    fn add_with_depth(&mut self, u: Rc<BSTNode<T>>) -> i64 {
         let mut w = self.r.clone();
         if let None = w {
             self.r = Some(u.clone());
@@ -117,7 +139,7 @@ where
                                 *w.left.borrow_mut() = Some(u.clone());
                                 *u.parent.borrow_mut() = Some(Rc::downgrade(w));
                                 next = None;
-                            },
+                            }
                             Some(left) => next = Some(left.clone()),
                         }
                     } else if &*u.x.borrow() > &*w.x.borrow() {
@@ -126,21 +148,85 @@ where
                                 *w.right.borrow_mut() = Some(u.clone());
                                 *u.parent.borrow_mut() = Some(Rc::downgrade(w));
                                 next = None;
-                            },
+                            }
                             Some(right) => next = Some(right.clone()),
                         }
                     } else {
-                        return -1
+                        return -1;
                     }
                     d += 1;
-                },
+                }
                 None => {
                     self.n += 1;
                     self.q += 1;
-                    break d
+                    break d;
                 }
             }
             w = next;
+        }
+    }
+    fn splice(&mut self, u: Rc<BSTNode<T>>) -> Option<T> {
+        let s: Tree<T>;
+        let mut p: Tree<T> = None;
+        if u.left.borrow().is_some() {
+            s = u.left.borrow_mut().take();
+        } else {
+            s = u.right.borrow_mut().take();
+        }
+        if let Some(r) = &self.r {
+            if Rc::ptr_eq(&u, r) {
+                self.r = s.clone();
+                p = None;
+            } else {
+                p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
+                p.as_ref().map(|p| {
+                    let left = p.left.borrow().clone();
+                    match left {
+                        Some(ref left) if Rc::ptr_eq(left, &u) => {
+                            *p.left.borrow_mut() = s.clone();
+                        }
+                        _ => {
+                            *p.right.borrow_mut() = s.clone();
+                        }
+                    }
+                });
+            }
+        }
+        match (s, p) {
+            (Some(ref s), Some(ref p)) => {
+                s.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            (Some(ref s), None) => {
+                s.parent.borrow_mut().take();
+            }
+            _ => (),
+        }
+        self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
+    }
+    fn remove_u(&mut self, u: Rc<BSTNode<T>>) -> Option<T> {
+        if u.left.borrow().is_none() || u.right.borrow().is_none() {
+            self.splice(u)
+        } else {
+            let mut w = u.right.borrow().clone();
+            loop {
+                let mut next = None;
+                if let Some(ref w) = w {
+                    match *w.left.borrow() {
+                        Some(ref left) => next = Some(left.clone()),
+                        None => break,
+                    }
+                }
+                w = next;
+            }
+            u.x.swap(&w.as_ref().unwrap().x);
+            self.splice(w.unwrap())
+        }
+    }
+    fn bst_remove(&mut self, x: &T) -> Option<T> {
+        match self.find_last(x) {
+            Some(u) if &*u.x.borrow() == x => self.remove_u(u),
+            _ => None,
         }
     }
 }
@@ -149,13 +235,69 @@ impl<T> SSet<T> for ScapegoatTree<T>
 where
     T: Ord + Clone + Default,
 {
-    fn size(&self) -> usize { 
+    fn size(&self) -> usize {
         self.n
-     }
-    fn add(&mut self, x: T) -> bool { 
-        let u = BSTNode::new(x);
-        todo!() 
     }
-    fn remove(&mut self, _: &T) -> std::option::Option<T> { todo!() }
-    fn find(&self, _: &T) -> std::option::Option<T> { todo!() }
+    fn add(&mut self, x: T) -> bool {
+        let u = Rc::new(BSTNode::new(x));
+        let d = self.add_with_depth(u.clone());
+        if d > crate::log32(self.q) {
+            let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+            let mut wp = w
+                .as_ref()
+                .and_then(|w| w.parent.borrow().as_ref().and_then(|wp| wp.upgrade()));
+            let mut a = Self::size_u(&w);
+            let mut b = Self::size_u(&wp);
+            while 3 * a < 2 * b {
+                w = wp;
+                wp = w
+                    .as_ref()
+                    .and_then(|w| w.parent.borrow().as_ref().and_then(|wp| wp.upgrade()));
+                a = Self::size_u(&w);
+                b = Self::size_u(&wp);
+            }
+            self.rebuild(&wp);
+            true
+        } else if d < 0 {
+            false
+        } else {
+            true
+        }
+    }
+    fn remove(&mut self, x: &T) -> Option<T> {
+        match self.bst_remove(x) {
+            Some(x) => {
+                if 2 * self.n < self.q {
+                    if self.r.is_some() {
+                        self.rebuild(&self.r.clone());
+                    }
+                    self.q = self.n;
+                }
+                Some(x)
+            },
+            None => None
+        }
+    }
+    fn find(&self, x: &T) -> Option<T> {
+        let mut w = self.r.clone();
+        let mut z: Tree<T> = None;
+        let mut next;
+        loop {
+            match w {
+                Some(ref u) if x < &*u.x.borrow() => {
+                    z = w.clone();
+                    next = u.left.borrow().clone()
+                }
+                Some(ref u) if x > &*u.x.borrow() => next = u.right.borrow().clone(),
+                Some(ref u) if x == &*u.x.borrow() => break Some(u.x.borrow().clone()),
+                _ => {
+                    break match z {
+                        Some(z) => Some(z.x.borrow().clone()),
+                        None => None,
+                    }
+                }
+            }
+            w = next;
+        }
+    }
 }
