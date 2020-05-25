@@ -32,7 +32,11 @@ where
     T: Ord + Clone,
 {
     pub fn new() -> Self {
-        Self { n: 0, q: 0, r: None }
+        Self {
+            n: 0,
+            q: 0,
+            r: None,
+        }
     }
     fn size_u(u: &Tree<T>) -> usize {
         match u {
@@ -279,8 +283,8 @@ where
                     self.q = self.n;
                 }
                 Some(x)
-            },
-            None => None
+            }
+            None => None,
         }
     }
     fn find(&self, x: &T) -> Option<T> {
@@ -326,17 +330,32 @@ mod test {
         scapegoattree.add(4);
         scapegoattree.add(5);
         let u = scapegoattree.find_last(&4).unwrap();
-        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        let p = u
+            .parent
+            .borrow()
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .unwrap();
         assert_eq!(8, *p.x.borrow());
         assert_eq!(1, *u.left.borrow().as_ref().unwrap().x.borrow());
         assert_eq!(6, *u.right.borrow().as_ref().unwrap().x.borrow());
         let u = scapegoattree.find_last(&1).unwrap();
-        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        let p = u
+            .parent
+            .borrow()
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .unwrap();
         assert_eq!(4, *p.x.borrow());
         assert_eq!(0, *u.left.borrow().as_ref().unwrap().x.borrow());
         assert_eq!(3, *u.right.borrow().as_ref().unwrap().x.borrow());
         let u = scapegoattree.find_last(&6).unwrap();
-        let p = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+        let p = u
+            .parent
+            .borrow()
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .unwrap();
         assert_eq!(4, *p.x.borrow());
         assert_eq!(5, *u.left.borrow().as_ref().unwrap().x.borrow());
         assert_eq!(7, *u.right.borrow().as_ref().unwrap().x.borrow());
