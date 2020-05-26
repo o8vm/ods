@@ -125,7 +125,7 @@ impl<T: Ord + Clone> RedBlackTree<T> {
         u.left.borrow().as_ref().map(|left| *left.color.borrow_mut() = Color::Red);
         u.right.borrow().as_ref().map(|right| *right.color.borrow_mut() = Color::Red);
     }
-    fn filp_left(&mut self, u: &Rc<RBTNode<T>>) {
+    fn flip_left(&mut self, u: &Rc<RBTNode<T>>) {
         Self::swap_colors(u, u.right.borrow().as_ref().unwrap());
         self.rotate_left(u);
     }
@@ -154,7 +154,32 @@ impl<T: Ord + Clone> RedBlackTree<T> {
         let p = self.find_last(&*u.x.borrow());
         self.add_child(&p, u)
     }
-    fn add_fixup(&mut self, u: Rc<RBTNode<T>>) {
+    fn add_fixup(&mut self, mut u: Rc<RBTNode<T>>) {
+        while *u.color.borrow() == Color::Red {
+            if Rc::ptr_eq(&u, self.r.as_ref().unwrap()) {
+                *u.color.borrow_mut() = Color::Black;
+                break
+            }
+            let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+            if w.left.borrow().as_ref().map(|left| *left.color.borrow()) == Some(Color::Black) {
+                self.flip_left(&w);
+                u = w;
+                w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+            }
+            if *w.color.borrow() == Color::Black {
+                break
+            }
+            let g = w.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+            if g.right.borrow().as_ref().map(|right| *right.color.borrow()) == Some(Color::Black) {
+                self.flip_right(&g);
+                break
+            } else {
+                Self::push_black(&g);
+                u = g;
+            }
+        }
+    }
+    fn remove_fixup(u: Rc<RBTNode<T>>) {
         todo!()
     }
 }
@@ -170,10 +195,29 @@ where
         let u = Rc::new(RBTNode::new(x));
         let added = self.add_u(u.clone());
         if added {
-            self.add_u(u);
+            self.add_fixup(u);
         }
         added
     }
-    fn remove(&mut self, _: &T) -> std::option::Option<T> { todo!() }
+    fn remove(&mut self, x: &T) -> Option<T> { 
+        let mut u = self.find_last(x);
+        match u {
+            None => None,
+            Some(ref u) if &*u.x.borrow() != x => None,
+            _ => {
+                let mut w = u.as_ref().and_then(|u| u.right.borrow().clone());
+                if w.is_none() {
+                    w = u;
+                    u = w.as_ref().and_then(|w| w.left.borrow().clone());
+                } else {
+                    while w.as_ref().and_then(|w| w.left.borrow().clone()).is_some() {
+                        w = w.as_ref().and_then(|w| w.left.borrow().clone());
+                    }
+                    
+                }
+                None
+            },
+        }
+    }
     fn find(&self, _: &T) -> std::option::Option<T> { todo!() }
 }
