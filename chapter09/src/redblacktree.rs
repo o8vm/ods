@@ -6,6 +6,7 @@ use std::rc::{Rc, Weak};
 pub enum Color {
     Red,    // 0
     Black,  // 1
+    WBlack, // 2
 }
 
 impl Default for Color {
@@ -117,13 +118,25 @@ impl<T: Ord + Clone> RedBlackTree<T> {
     }
     fn push_black(u: &Rc<RBTNode<T>>) {
         *u.color.borrow_mut() = Color::Red;
-        u.left.borrow().as_ref().map(|left| *left.color.borrow_mut() = Color::Black);
-        u.right.borrow().as_ref().map(|right| *right.color.borrow_mut() = Color::Black);
+        u.left
+            .borrow()
+            .as_ref()
+            .map(|left| *left.color.borrow_mut() = Color::Black);
+        u.right
+            .borrow()
+            .as_ref()
+            .map(|right| *right.color.borrow_mut() = Color::Black);
     }
     fn pull_black(u: &Rc<RBTNode<T>>) {
         *u.color.borrow_mut() = Color::Black;
-        u.left.borrow().as_ref().map(|left| *left.color.borrow_mut() = Color::Red);
-        u.right.borrow().as_ref().map(|right| *right.color.borrow_mut() = Color::Red);
+        u.left
+            .borrow()
+            .as_ref()
+            .map(|left| *left.color.borrow_mut() = Color::Red);
+        u.right
+            .borrow()
+            .as_ref()
+            .map(|right| *right.color.borrow_mut() = Color::Red);
     }
     fn flip_left(&mut self, u: &Rc<RBTNode<T>>) {
         Self::swap_colors(u, u.right.borrow().as_ref().unwrap());
@@ -158,28 +171,104 @@ impl<T: Ord + Clone> RedBlackTree<T> {
         while *u.color.borrow() == Color::Red {
             if Rc::ptr_eq(&u, self.r.as_ref().unwrap()) {
                 *u.color.borrow_mut() = Color::Black;
-                break
+                break;
             }
-            let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+            let mut w = u
+                .parent
+                .borrow()
+                .as_ref()
+                .and_then(|p| p.upgrade())
+                .unwrap();
             if w.left.borrow().as_ref().map(|left| *left.color.borrow()) == Some(Color::Black) {
                 self.flip_left(&w);
                 u = w;
-                w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+                w = u
+                    .parent
+                    .borrow()
+                    .as_ref()
+                    .and_then(|p| p.upgrade())
+                    .unwrap();
             }
             if *w.color.borrow() == Color::Black {
-                break
+                break;
             }
-            let g = w.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+            let g = w
+                .parent
+                .borrow()
+                .as_ref()
+                .and_then(|p| p.upgrade())
+                .unwrap();
             if g.right.borrow().as_ref().map(|right| *right.color.borrow()) == Some(Color::Black) {
                 self.flip_right(&g);
-                break
+                break;
             } else {
                 Self::push_black(&g);
                 u = g;
             }
         }
     }
-    fn remove_fixup(u: Rc<RBTNode<T>>) {
+    fn splice(&mut self, u: Rc<RBTNode<T>>) -> Option<T> {
+        let s: Tree<T>;
+        let mut p: Tree<T> = None;
+        if u.left.borrow().is_some() {
+            s = u.left.borrow_mut().take();
+        } else {
+            s = u.right.borrow_mut().take();
+        }
+        if let Some(r) = &self.r {
+            if Rc::ptr_eq(&u, r) {
+                self.r = s.clone();
+                p = None;
+            } else {
+                p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
+                p.as_ref().map(|p| {
+                    let left = p.left.borrow().clone();
+                    match left {
+                        Some(ref left) if Rc::ptr_eq(left, &u) => {
+                            *p.left.borrow_mut() = s.clone();
+                        }
+                        _ => {
+                            *p.right.borrow_mut() = s.clone();
+                        }
+                    }
+                });
+            }
+        }
+        match (s, p) {
+            (Some(ref s), Some(ref p)) => {
+                s.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            (Some(ref s), None) => {
+                s.parent.borrow_mut().take();
+            }
+            _ => (),
+        }
+        self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
+    }
+    fn remove_fixup(&mut self, mut u: Rc<RBTNode<T>>) {
+        while *u.color.borrow() == Color::WBlack {
+            if Rc::ptr_eq(&u, self.r.as_ref().unwrap()) {
+                *u.color.borrow_mut() = Color::Black;
+            } else {
+                let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+                let left = w.left.borrow().clone();
+                match left {
+                    Some(ref left) if *left.color.borrow() == Color::Red => todo!(),
+                    Some(ref left) if Rc::ptr_eq(&u, left) => todo!(),
+                    _ => todo!(),
+                }
+            }
+        }
+        todo!()
+    }
+    fn remove_fix_case1(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
+        todo!()
+    }
+    fn remove_fix_case2(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
+        todo!()
+    }
+    fn remove_fix_case3(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
         todo!()
     }
 }
@@ -188,10 +277,10 @@ impl<T> SSet<T> for RedBlackTree<T>
 where
     T: Ord + Clone + Default,
 {
-    fn size(&self) -> usize { 
+    fn size(&self) -> usize {
         self.n
     }
-    fn add(&mut self, x: T) -> bool { 
+    fn add(&mut self, x: T) -> bool {
         let u = Rc::new(RBTNode::new(x));
         let added = self.add_u(u.clone());
         if added {
@@ -199,25 +288,38 @@ where
         }
         added
     }
-    fn remove(&mut self, x: &T) -> Option<T> { 
-        let mut u = self.find_last(x);
-        match u {
-            None => None,
-            Some(ref u) if &*u.x.borrow() != x => None,
-            _ => {
-                let mut w = u.as_ref().and_then(|u| u.right.borrow().clone());
+    fn remove(&mut self, x: &T) -> Option<T> {
+        match self.find_last(x) {
+            Some(u) if &*u.x.borrow() == x => {
+                let mut w = u.right.borrow().clone();
+                let wi;
+                let ui;
                 if w.is_none() {
-                    w = u;
-                    u = w.as_ref().and_then(|w| w.left.borrow().clone());
+                    wi = u;
+                    ui = wi.left.borrow().clone()?;
                 } else {
-                    while w.as_ref().and_then(|w| w.left.borrow().clone()).is_some() {
+                    while w.as_ref()?.left.borrow().is_some() {
                         w = w.as_ref().and_then(|w| w.left.borrow().clone());
                     }
-                    
+                    wi = w?;
+                    u.x.swap(&wi.x);
+                    ui = wi.right.borrow().clone()?;
                 }
-                None
-            },
+                let test = *ui.color.borrow() as isize + *wi.color.borrow() as isize;
+                *ui.color.borrow_mut() = match test {
+                    0 => Color::Red,
+                    1 => Color::Black,
+                    _ => Color::WBlack,
+                };
+                ui.parent.swap(&wi.parent);
+                let res = self.splice(wi);
+                self.remove_fixup(ui);
+                res
+            }
+            _ => None,
         }
     }
-    fn find(&self, _: &T) -> std::option::Option<T> { todo!() }
+    fn find(&self, _: &T) -> std::option::Option<T> {
+        todo!()
+    }
 }
