@@ -251,21 +251,59 @@ impl<T: Ord + Clone> RedBlackTree<T> {
             if Rc::ptr_eq(&u, self.r.as_ref().unwrap()) {
                 *u.color.borrow_mut() = Color::Black;
             } else {
-                let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade()).unwrap();
+                let w = u
+                    .parent
+                    .borrow()
+                    .as_ref()
+                    .and_then(|p| p.upgrade())
+                    .unwrap();
                 let left = w.left.borrow().clone();
                 match left {
-                    Some(ref left) if *left.color.borrow() == Color::Red => todo!(),
-                    Some(ref left) if Rc::ptr_eq(&u, left) => todo!(),
-                    _ => todo!(),
+                    Some(ref left) if *left.color.borrow() == Color::Red => {
+                        u = self.remove_fix_case1(u)
+                    }
+                    Some(ref left) if Rc::ptr_eq(&u, left) => u = self.remove_fix_case2(u),
+                    _ => u = self.remove_fix_case3(u),
                 }
+            }
+        }
+        if !Rc::ptr_eq(&u, self.r.as_ref().unwrap()) {
+            let w = u
+                .parent
+                .borrow()
+                .as_ref()
+                .and_then(|p| p.upgrade())
+                .unwrap();
+            if w.right.borrow().as_ref().map(|right| *right.color.borrow()) == Some(Color::Red)
+                && w.left.borrow().as_ref().map(|left| *left.color.borrow()) == Some(Color::Black)
+            {
+                self.flip_left(&w);
             }
         }
         todo!()
     }
     fn remove_fix_case1(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
-        todo!()
+        let w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+        if let Some(p) = &w {
+            self.flip_left(p);
+        }
+        u
     }
     fn remove_fix_case2(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
+        let w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+        let v = w.as_ref().and_then(|w| w.right.borrow().clone());
+        if let Some(wi) = &w {
+            Self::pull_black(wi);
+            self.flip_left(wi);
+        }
+        let q = w.as_ref().and_then(|w| w.right.borrow().clone());
+        if let (Some(wi), Some(vi), Some(qi)) = (&w, &v, &q) {
+            if *qi.color.borrow() == Color::Red {
+                self.rotate_left(wi);
+                self.flip_right(vi);
+                Self::push_black(qi);
+            }
+        }
         todo!()
     }
     fn remove_fix_case3(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
