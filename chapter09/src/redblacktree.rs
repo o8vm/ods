@@ -42,6 +42,9 @@ impl<T: Default> RBTNode<T> {
 }
 
 impl<T: Ord + Clone> RedBlackTree<T> {
+    pub fn new() -> Self {
+        Self { n: 0, r: None }
+    }
     fn find_last(&self, x: &T) -> Tree<T> {
         let mut w = self.r.clone();
         let mut prev = None;
@@ -173,37 +176,30 @@ impl<T: Ord + Clone> RedBlackTree<T> {
                 *u.color.borrow_mut() = Color::Black;
                 break;
             }
-            let mut w = u
-                .parent
-                .borrow()
-                .as_ref()
-                .and_then(|p| p.upgrade())
-                .unwrap();
-            if w.left.borrow().as_ref().map(|left| *left.color.borrow()) == Some(Color::Black) {
-                self.flip_left(&w);
-                u = w;
-                w = u
-                    .parent
-                    .borrow()
-                    .as_ref()
-                    .and_then(|p| p.upgrade())
-                    .unwrap();
+            let mut w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
+            let left = w.as_ref().and_then(|w| w.left.borrow().clone());
+            if let Some(Color::Black) | None = left.as_ref().map(|left| *left.color.borrow()) {
+                self.flip_left(w.as_ref().unwrap());
+                u = w.unwrap();
+                w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
             }
-            if *w.color.borrow() == Color::Black {
+            if let Some(Color::Black) | None = w.as_ref().map(|w| *w.color.borrow()) {
                 break;
             }
-            let g = w
-                .parent
-                .borrow()
-                .as_ref()
-                .and_then(|p| p.upgrade())
-                .unwrap();
-            if g.right.borrow().as_ref().map(|right| *right.color.borrow()) == Some(Color::Black) {
-                self.flip_right(&g);
+            let g = match w {
+                Some(ref w) => match &*w.parent.borrow() {
+                    Some(ref p) => p.upgrade(),
+                    None => None,
+                },
+                None => None,
+            };
+            let gr = g.as_ref().and_then(|g| g.right.borrow().clone());
+            if let Some(Color::Black) | None = gr.as_ref().map(|right| *right.color.borrow()) {
+                self.flip_right(g.as_ref().unwrap());
                 break;
             } else {
-                Self::push_black(&g);
-                u = g;
+                Self::push_black(g.as_ref().unwrap());
+                u = g.unwrap();
             }
         }
     }
@@ -340,6 +336,60 @@ impl<T: Ord + Clone> RedBlackTree<T> {
             }
         }
     }
+
+    pub fn is_a_valid_red_black_tree(&self) -> bool {
+        let result = self.validade(&self.r, Color::Red, 0);
+        let red_red = result.0;
+        let black_hight_min = result.1;
+        let black_height_max = result.2;
+        let left_leaning = result.3;
+        red_red == 0 && black_hight_min == black_height_max && left_leaning
+    }
+    fn validade(
+        &self,
+        node: &Tree<T>,
+        parent_color: Color,
+        black_height: usize,
+    ) -> (usize, usize, usize, bool) {
+        // black_height: min black-height == max black-height
+        // red_red: u.color + u.parent.color >= 1 
+        // left-leaning: if u.left is black, u.right is black.
+        if let Some(u) = node {
+            let red_red = if parent_color == Color::Red && *u.color.borrow() == Color::Red {
+                1
+            } else {
+                0
+            };
+            let black_height = black_height
+                + match *u.color.borrow() {
+                    Color::Black => 1,
+                    Color::Red => 0,
+                    Color::WBlack => 2,
+                };
+            let left = &*u.left.borrow();
+            let right = &*u.right.borrow();
+            let left_leaning = match (left, right) {
+                (Some(left), Some(right))
+                    if *left.color.borrow() == Color::Black
+                        && *right.color.borrow() == Color::Red =>
+                {
+                    false
+                }
+                (None, Some(right)) if *right.color.borrow() == Color::Red => false,
+                _ => true,
+            };
+            let l = self.validade(&u.left.borrow(), *u.color.borrow(), black_height);
+            let r = self.validade(&u.right.borrow(), *u.color.borrow(), black_height);
+            (
+                red_red + l.0 + r.0,
+                std::cmp::min(l.1, r.1),
+                std::cmp::max(l.2, r.2),
+                left_leaning && l.3 && r.3,
+            )
+        } else {
+            (0, black_height, black_height, true)
+        }
+    }
 }
 
 impl<T> SSet<T> for RedBlackTree<T>
@@ -409,5 +459,25 @@ where
             }
             w = next;
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chapter01::interface::SSet;
+    #[test]
+    fn test_redblacktree() {
+        let mut redblacktree = RedBlackTree::<usize>::new();
+        // add test
+        redblacktree.add(1);
+        redblacktree.add(2);
+        redblacktree.add(3);
+        redblacktree.add(4);
+        redblacktree.add(5);
+        redblacktree.add(6);
+        redblacktree.add(7);
+        assert!(redblacktree.is_a_valid_red_black_tree());
+        assert_eq!(redblacktree.size(), 7);
     }
 }
