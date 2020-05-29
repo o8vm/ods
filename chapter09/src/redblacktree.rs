@@ -290,24 +290,55 @@ impl<T: Ord + Clone> RedBlackTree<T> {
         u
     }
     fn remove_fix_case2(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
-        let w = u.parent.borrow().as_ref().and_then(|p| p.upgrade());
-        let v = w.as_ref().and_then(|w| w.right.borrow().clone());
-        if let Some(wi) = &w {
-            Self::pull_black(wi);
-            self.flip_left(wi);
-        }
-        let q = w.as_ref().and_then(|w| w.right.borrow().clone());
-        if let (Some(wi), Some(vi), Some(qi)) = (&w, &v, &q) {
-            if *qi.color.borrow() == Color::Red {
-                self.rotate_left(wi);
-                self.flip_right(vi);
-                Self::push_black(qi);
+        let w = u
+            .parent
+            .borrow()
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .unwrap();
+        let v = w.right.borrow().clone().unwrap();
+        Self::pull_black(&w);
+        self.flip_left(&w);
+        let q = w.right.borrow().clone().unwrap();
+        if *q.color.borrow() == Color::Red {
+            self.rotate_left(&w);
+            self.flip_right(&v);
+            Self::push_black(&q);
+            let vr = v.right.borrow().clone();
+            if vr.as_ref().map(|vr| *vr.color.borrow()) == Some(Color::Red) {
+                self.flip_left(&v);
             }
+            q
+        } else {
+            v
         }
-        todo!()
     }
     fn remove_fix_case3(&mut self, u: Rc<RBTNode<T>>) -> Rc<RBTNode<T>> {
-        todo!()
+        let w = u
+            .parent
+            .borrow()
+            .as_ref()
+            .and_then(|p| p.upgrade())
+            .unwrap();
+        let v = w.left.borrow().clone().unwrap();
+        Self::pull_black(&w);
+        self.flip_right(&w);
+        let q = w.left.borrow().clone().unwrap();
+        if *q.color.borrow() == Color::Red {
+            self.rotate_right(&w);
+            self.flip_left(&v);
+            Self::push_black(&q);
+            q
+        } else {
+            let vl = v.left.borrow().clone();
+            if vl.as_ref().map(|vl| *vl.color.borrow()) == Some(Color::Red) {
+                Self::push_black(&v);
+                v
+            } else {
+                self.flip_left(&v);
+                w
+            }
+        }
     }
 }
 
@@ -357,7 +388,26 @@ where
             _ => None,
         }
     }
-    fn find(&self, _: &T) -> std::option::Option<T> {
-        todo!()
+    fn find(&self, x: &T) -> Option<T> {
+        let mut w = self.r.clone();
+        let mut z: Tree<T> = None;
+        let mut next;
+        loop {
+            match w {
+                Some(ref u) if x < &*u.x.borrow() => {
+                    z = w.clone();
+                    next = u.left.borrow().clone()
+                }
+                Some(ref u) if x > &*u.x.borrow() => next = u.right.borrow().clone(),
+                Some(ref u) if x == &*u.x.borrow() => break Some(u.x.borrow().clone()),
+                _ => {
+                    break match z {
+                        Some(z) => Some(z.x.borrow().clone()),
+                        None => None,
+                    }
+                }
+            }
+            w = next;
+        }
     }
 }
