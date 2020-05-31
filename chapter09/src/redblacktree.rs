@@ -334,7 +334,12 @@ impl<T: Ord + Clone> RedBlackTree<T> {
             }
         }
     }
-    fn remove_fix_case1(&mut self, u: Tree<T>, w: Tree<T>, color: isize) -> (isize, Tree<T>, Tree<T>) {
+    fn remove_fix_case1(
+        &mut self,
+        u: Tree<T>,
+        w: Tree<T>,
+        color: isize,
+    ) -> (isize, Tree<T>, Tree<T>) {
         self.flip_right(w.as_ref().unwrap());
         (color, u, w)
     }
