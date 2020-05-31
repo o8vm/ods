@@ -5,12 +5,12 @@ This is the Rust version of Open Data Structures.
 
 The following is a list of data structures that have been implemented in Rust.
 
-* [chapter01 (Interface)](/chapter01/src/interface.rs)
-    * trait Queue
-    * trait Stack
-    * trait List
-    * trait USet
-    * trait SSet
+* chapter01 (Interface)
+    * [trait Queue](/chapter01/src/interface.rs#L1)
+    * [trait Stack](/chapter01/src/interface.rs#L6)
+    * [trait List](/chapter01/src/interface.rs#L11)
+    * [trait USet](/chapter01/src/interface.rs#L19)
+    * [trait SSet](/chapter01/src/interface.rs#L26)
 * chapter02 (Array-Based Lists)
     * [ArrayStack](/chapter02/src/arraystack.rs)
     * [ArrayQueue](/chapter02/src/arrayqueue.rs)
@@ -36,4 +36,7 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter08 (Scapegoat Trees)
     * [ScapegoatTree](/chapter08/src/scapegoattree.rs)
 * chapter09 (Red-Black Trees)
-    * RedBlackTree(*coming soon*)
+    * [RedBlackTree](/chapter09/src/redblacktree.rs)
+* chapter10 (Heaps)
+    * BinaryHeap(*coming soon*)
+    * MeldableHeap(*coming soon*)
