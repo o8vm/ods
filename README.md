@@ -1,7 +1,7 @@
 # Open Data Structures (in Rust)
 
 Open Data Structures is a textbook and source list about data structures. You can review them here [Open Data Structures](https://opendatastructures.org/).  
-This is the Rust version of Open Data Structures. 
+This is the Rust version of Open Data Structures. Only safe Rust.
 
 *This repository is for my learning about data structures.  
 Advice and pull requests for already implemented data structures are welcome!*
