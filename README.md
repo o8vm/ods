@@ -41,5 +41,5 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter09 (Red-Black Trees)
     * [RedBlackTree](/chapter09/src/redblacktree.rs)
 * chapter10 (Heaps)
-    * BinaryHeap(*coming soon*)
+    * [BinaryHeap](/chapter10/src/binaryheap.rs)
     * MeldableHeap(*coming soon*)

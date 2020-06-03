@@ -38,14 +38,39 @@ impl<T: Ord> BinaryHeap<T> {
     }
     fn bubbleup(&mut self, mut i: usize) {
         let mut p = Self::parent(i);
-        while self.a[i] < self.a[p] {
+        while self.a.get(i) < self.a.get(p) {
             self.a.swap(i, p);
             i = p;
             p = Self::parent(i);
         }
     }
-    fn trickle_down(&mut self, i: usize) {
-
+    fn trickle_down(&mut self, mut i: usize) {
+        loop {
+            let mut flag = false;
+            let mut j = i;
+            let r = Self::riht(i);
+            if r < self.n && self.a.get(r) < self.a.get(i) {
+                let l = Self::left(i);
+                if self.a.get(l) < self.a.get(r) {
+                    j = l;
+                    flag = true;
+                } else {
+                    j = r;
+                    flag = true;
+                }
+            } else {
+                let l = Self::left(i);
+                if l < self.n && self.a.get(l) < self.a.get(i) {
+                    j = l;
+                }
+            }
+            if flag == true {
+                self.a.swap(i, j);
+                i = j;
+            } else {
+                break;
+            }
+        }
     }
     fn left(i: usize) -> usize {
         2 * i + 1
@@ -54,13 +79,13 @@ impl<T: Ord> BinaryHeap<T> {
         2 * i + 2
     }
     fn parent(i: usize) -> usize {
-        (i - 1) / 2
+        (std::cmp::max(1, i) - 1) / 2
     }
 }
 
 impl<T: Ord> Queue<T> for BinaryHeap<T> {
     fn add(&mut self, x: T) {
-        if self.n + 1 >= self.length() {
+        if self.n + 1 > self.length() {
             self.resize();
         }
         self.a[self.n] = Some(x);
@@ -77,5 +102,55 @@ impl<T: Ord> Queue<T> for BinaryHeap<T> {
             self.resize();
         }
         x
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chapter01::interface::Queue;
+    #[test]
+    fn test_binaryheap() {
+        let mut binaryheap = BinaryHeap::<usize>::new();
+        binaryheap.add(4);
+        binaryheap.add(9);
+        binaryheap.add(8);
+        binaryheap.add(17);
+        binaryheap.add(26);
+        binaryheap.add(50);
+        binaryheap.add(16);
+        binaryheap.add(19);
+        binaryheap.add(69);
+        binaryheap.add(32);
+        binaryheap.add(93);
+        binaryheap.add(55);
+        binaryheap.add(6);
+        assert_eq!(&Some(4), binaryheap.a.get(0).unwrap());
+        assert_eq!(&Some(9), binaryheap.a.get(1).unwrap());
+        assert_eq!(&Some(6), binaryheap.a.get(2).unwrap());
+        assert_eq!(&Some(17), binaryheap.a.get(3).unwrap());
+        assert_eq!(&Some(26), binaryheap.a.get(4).unwrap());
+        assert_eq!(&Some(8), binaryheap.a.get(5).unwrap());
+        assert_eq!(&Some(16), binaryheap.a.get(6).unwrap());
+        assert_eq!(&Some(19), binaryheap.a.get(7).unwrap());
+        assert_eq!(&Some(69), binaryheap.a.get(8).unwrap());
+        assert_eq!(&Some(32), binaryheap.a.get(9).unwrap());
+        assert_eq!(&Some(93), binaryheap.a.get(10).unwrap());
+        assert_eq!(&Some(55), binaryheap.a.get(11).unwrap());
+        assert_eq!(&Some(50), binaryheap.a.get(12).unwrap());
+        assert_eq!(Some(4), binaryheap.remove());
+        assert_eq!(&Some(6), binaryheap.a.get(0).unwrap());
+        assert_eq!(&Some(9), binaryheap.a.get(1).unwrap());
+        assert_eq!(&Some(8), binaryheap.a.get(2).unwrap());
+        assert_eq!(&Some(17), binaryheap.a.get(3).unwrap());
+        assert_eq!(&Some(26), binaryheap.a.get(4).unwrap());
+        assert_eq!(&Some(50), binaryheap.a.get(5).unwrap());
+        assert_eq!(&Some(16), binaryheap.a.get(6).unwrap());
+        assert_eq!(&Some(19), binaryheap.a.get(7).unwrap());
+        assert_eq!(&Some(69), binaryheap.a.get(8).unwrap());
+        assert_eq!(&Some(32), binaryheap.a.get(9).unwrap());
+        assert_eq!(&Some(93), binaryheap.a.get(10).unwrap());
+        assert_eq!(&Some(55), binaryheap.a.get(11).unwrap());
+        //println!("{:?}", binaryheap);
     }
 }
