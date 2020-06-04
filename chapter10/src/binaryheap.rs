@@ -62,6 +62,7 @@ impl<T: Ord> BinaryHeap<T> {
                 let l = Self::left(i);
                 if l < self.n && self.a.get(l) < self.a.get(i) {
                     j = l;
+                    flag = true;
                 }
             }
             if flag == true {
