@@ -42,4 +42,9 @@ The following is a list of data structures that have been implemented in Rust.
     * [RedBlackTree](/chapter09/src/redblacktree.rs)
 * chapter10 (Heaps)
     * [BinaryHeap](/chapter10/src/binaryheap.rs)
-    * MeldableHeap(*coming soon*)
+    * [MeldableHeap](/chapter10/src/meldableheap.rs)
+* chapter11 (Sorting Algorithms)
+    * Merge-Sort(*coming soon*)
+    * Quicksort(*coming soon*)
+    * Heap-sort(*coming soon*)
+    
