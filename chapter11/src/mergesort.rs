@@ -11,7 +11,8 @@ pub fn mergesort<T: PartialOrd + Clone>(a: &mut [T]) {
 }
 
 fn merge<T: PartialOrd + Clone>(a0: &mut [T], a1: &mut [T], a: &mut [T]) {
-    let mut i0 = 0; let mut i1 = 0;
+    let mut i0 = 0;
+    let mut i1 = 0;
     for ai in a.iter_mut() {
         if i0 == a0.len() {
             *ai = a1[i1].clone();
@@ -31,9 +32,9 @@ fn merge<T: PartialOrd + Clone>(a0: &mut [T], a1: &mut [T], a: &mut [T]) {
 
 #[cfg(test)]
 mod test {
-    use rand::{thread_rng, Rng};
-    use rand::distributions::Standard;
     use super::mergesort;
+    use rand::distributions::Standard;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_mergesort() {
         let mut a = [13, 8, 5, 2, 4, 0, 6, 9, 7, 3, 12, 1, 10, 11];
@@ -42,11 +43,11 @@ mod test {
         //println!("{:?}", a);
 
         let mut rng = thread_rng();
-        for _ in 0u32 .. 50000u32 {
+        for _ in 0u32..50000u32 {
             let len: usize = rng.gen();
             let mut v: Vec<isize> = rng.sample_iter(&Standard).take((len % 32) + 1).collect();
             mergesort(&mut v);
-            for i in 0 .. v.len() - 1 {
+            for i in 0..v.len() - 1 {
                 assert!(v[i] <= v[i + 1])
             }
         }

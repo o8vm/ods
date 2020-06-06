@@ -3,9 +3,9 @@ pub fn quicksort<T: PartialOrd + Clone>(a: &mut [T]) {
 }
 fn do_sort<T: PartialOrd + Clone>(a: &mut [T], i: usize, n: usize) {
     if n <= 1 {
-        return
+        return;
     }
-    let x = a[i + rand::random::<usize>()%n].clone();
+    let x = a[i + rand::random::<usize>() % n].clone();
     let mut p = i;
     let mut j = i;
     let mut q = i + n;
@@ -27,9 +27,9 @@ fn do_sort<T: PartialOrd + Clone>(a: &mut [T], i: usize, n: usize) {
 
 #[cfg(test)]
 mod test {
-    use rand::{thread_rng, Rng};
-    use rand::distributions::Standard;
     use super::quicksort;
+    use rand::distributions::Standard;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_quicksort() {
         let mut a = [13, 8, 5, 2, 4, 0, 6, 9, 7, 3, 12, 1, 10, 11];
@@ -43,11 +43,11 @@ mod test {
         assert_eq!(&a, &[0, 2]);
 
         let mut rng = thread_rng();
-        for _ in 0u32 .. 50000u32 {
+        for _ in 0u32..50000u32 {
             let len: usize = rng.gen();
             let mut v: Vec<isize> = rng.sample_iter(&Standard).take((len % 32) + 1).collect();
             quicksort(&mut v);
-            for i in 0 .. v.len() - 1 {
+            for i in 0..v.len() - 1 {
                 assert!(v[i] <= v[i + 1])
             }
         }
