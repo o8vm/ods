@@ -45,6 +45,6 @@ The following is a list of data structures that have been implemented in Rust.
     * [MeldableHeap](/chapter10/src/meldableheap.rs)
 * chapter11 (Sorting Algorithms)
     * [Merge-Sort](/chapter11/src/mergesort.rs)
-    * Quicksort(*coming soon*)
+    * [Quicksort](/chapter11/src/quicksort.rs)
     * Heap-sort(*coming soon*)
     
