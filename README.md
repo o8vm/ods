@@ -47,6 +47,6 @@ The following is a list of data structures that have been implemented in Rust.
     * [Merge-Sort](/chapter11/src/mergesort.rs)
     * [Quicksort](/chapter11/src/quicksort.rs)
     * [Heap-sort](/chapter11/src/heapsort.rs), using [BinaryHeap](/chapter10/src/binaryheap.rs#L87)
-    * Counting Sort(*coming soon*)
+    * [Counting Sort](/chapter11/src/countingsort.rs)
     * Radix-Sort(*coming soon*)
     
