@@ -1,4 +1,4 @@
-pub fn merge_sort<T: Ord + Clone>(a: &mut [T]) {
+pub fn merge_sort<T: PartialOrd + Clone>(a: &mut [T]) {
     let mut w = a.to_vec();
     if a.len() > 1 {
         let mid = a.len() / 2;
@@ -10,7 +10,7 @@ pub fn merge_sort<T: Ord + Clone>(a: &mut [T]) {
     a.clone_from_slice(&w);
 }
 
-fn merge<T: Ord + Clone>(a0: &mut [T], a1: &mut [T], a: &mut [T]) {
+fn merge<T: PartialOrd + Clone>(a0: &mut [T], a1: &mut [T], a: &mut [T]) {
     let mut i0 = 0; let mut i1 = 0;
     for ai in a.iter_mut() {
         if i0 == a0.len() {
