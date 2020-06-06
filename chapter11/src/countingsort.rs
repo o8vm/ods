@@ -1,6 +1,5 @@
 pub fn countingsort(a: &mut [usize]) {
     let k = *a.iter().max().unwrap() + 1;
-    println!("{}", k);
     let mut c = vec![0usize; k];
     for ai in a.iter() {
         c[*ai] += 1;
