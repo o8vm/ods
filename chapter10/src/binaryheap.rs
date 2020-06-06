@@ -6,7 +6,7 @@ pub struct BinaryHeap<T> {
     n: usize,
 }
 
-impl<T: Ord> BinaryHeap<T> {
+impl<T: PartialOrd> BinaryHeap<T> {
     pub fn length(&self) -> usize {
         self.a.len()
     }
@@ -84,7 +84,35 @@ impl<T: Ord> BinaryHeap<T> {
     }
 }
 
-impl<T: Ord> Queue<T> for BinaryHeap<T> {
+impl<T: PartialOrd + Clone> BinaryHeap<T> {
+    fn from_slice(b: &[T]) -> Self {
+        let mut bh = Self {
+            a: b.iter()
+                .map(|x| Some(x.clone()))
+                .take(b.len())
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            n: b.len(),
+        };
+        for i in (0..=(std::cmp::max(bh.n / 2, 1) - 1)).rev() {
+            bh.trickle_down(i);
+        }
+        bh
+    }
+    pub fn sort(b: &mut [T]) {
+        let mut h = Self::from_slice(b);
+        while h.n > 1 {
+            h.n -= 1;
+            h.a.swap(h.n, 0);
+            h.trickle_down(0);
+        }
+        for (i, bi) in b.iter_mut().enumerate() {
+            *bi = h.a[i].take().unwrap();
+        }
+        b.reverse();
+    }
+}
+impl<T: PartialOrd> Queue<T> for BinaryHeap<T> {
     fn add(&mut self, x: T) {
         if self.n + 1 > self.length() {
             self.resize();
