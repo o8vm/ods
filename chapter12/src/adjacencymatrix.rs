@@ -47,7 +47,7 @@ impl Graph for AdjacencyMatrix {
             false
         }
     }
-    fn out_edge(&self, i: usize) -> Vec<usize> {
+    fn out_edges(&self, i: usize) -> Vec<usize> {
         let mut edges = vec![];
         for j in 0..self.n {
             if let Some(true) = self.get(i, j) {
@@ -56,7 +56,7 @@ impl Graph for AdjacencyMatrix {
         }
         edges
     }
-    fn in_edge(&self, i: usize) -> Vec<usize> {
+    fn in_edges(&self, i: usize) -> Vec<usize> {
         let mut edges = vec![];
         for j in 0..self.n {
             if let Some(true) = self.get(j, i) {
@@ -114,8 +114,8 @@ mod test {
             for _ in set.iter().filter(|e| e.1 == i) {
                 ie += 1;
             }
-            assert_eq!(adjm.out_edge(i).len(), oe);
-            assert_eq!(adjm.in_edge(i).len(), ie);
+            assert_eq!(adjm.out_edges(i).len(), oe);
+            assert_eq!(adjm.in_edges(i).len(), ie);
         }
     }
 }
