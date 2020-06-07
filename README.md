@@ -14,6 +14,7 @@ The following is a list of data structures that have been implemented in Rust.
     * [trait List](/chapter01/src/interface.rs#L11)
     * [trait USet](/chapter01/src/interface.rs#L19)
     * [trait SSet](/chapter01/src/interface.rs#L26)
+    * [trait Graph](/chapter01/src/interface.rs#L33)
 * chapter02 (Array-Based Lists)
     * [ArrayStack](/chapter02/src/arraystack.rs)
     * [ArrayQueue](/chapter02/src/arrayqueue.rs)
