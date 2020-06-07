@@ -29,3 +29,11 @@ pub trait SSet<T: Ord + Clone> {
     fn remove(&mut self, x: &T) -> Option<T>;
     fn find(&self, x: &T) -> Option<T>;
 }
+
+pub trait Graph {
+    fn add_edge(i: usize, j: usize);
+    fn remove_edge(i: usize, j: usize);
+    fn has_edge(i: usize, j: usize) -> bool;
+    fn out_edgr(i: usize) -> Vec<usize>;
+    fn in_edge(i: usize) -> Vec<usize>;
+}
