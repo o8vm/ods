@@ -18,7 +18,7 @@ impl AdjacencyMatrix {
             ii.get_mut(j)
         } else {
             None
-        }    
+        }
     }
     fn get(&self, i: usize, j: usize) -> Option<&bool> {
         if let Some(ii) = self.a.get(i) {
@@ -30,12 +30,12 @@ impl AdjacencyMatrix {
 }
 
 impl Graph for AdjacencyMatrix {
-    fn add_edge(&mut self, i: usize, j: usize) { 
+    fn add_edge(&mut self, i: usize, j: usize) {
         if let Some(e) = self.get_mut(i, j) {
             *e = true;
         }
     }
-    fn remove_edge(&mut self, i: usize, j: usize) { 
+    fn remove_edge(&mut self, i: usize, j: usize) {
         if let Some(e) = self.get_mut(i, j) {
             *e = false;
         }
@@ -50,7 +50,7 @@ impl Graph for AdjacencyMatrix {
     fn out_edge(&self, i: usize) -> Vec<usize> {
         let mut edges = vec![];
         for j in 0..self.n {
-            if let Some(true)= self.get(i, j) {
+            if let Some(true) = self.get(i, j) {
                 edges.push(j);
             }
         }
@@ -59,7 +59,7 @@ impl Graph for AdjacencyMatrix {
     fn in_edge(&self, i: usize) -> Vec<usize> {
         let mut edges = vec![];
         for j in 0..self.n {
-            if let Some(true)= self.get(j, i) {
+            if let Some(true) = self.get(j, i) {
                 edges.push(j);
             }
         }
@@ -69,9 +69,9 @@ impl Graph for AdjacencyMatrix {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use rand::{thread_rng, Rng};
     use std::collections::HashSet;
-    use super::*;
     #[test]
     fn test_adjacencymatrix() {
         let n = 50;
@@ -79,7 +79,7 @@ mod test {
         let mut set: HashSet<(usize, usize)> = HashSet::new();
         let mut rng = thread_rng();
         // add test
-        for _ in 0..(5*n) {
+        for _ in 0..(5 * n) {
             let (i, j) = (rng.gen_range(0, n), rng.gen_range(0, n));
             if !set.contains(&(i, j)) {
                 set.insert((i, j));
@@ -108,12 +108,12 @@ mod test {
         for i in 0..n {
             let mut oe = 0;
             let mut ie = 0;
-            for _ in set.iter().filter(|e| e.0 == i) { 
+            for _ in set.iter().filter(|e| e.0 == i) {
                 oe += 1;
-            };
-            for _ in set.iter().filter(|e| e.1 == i) { 
+            }
+            for _ in set.iter().filter(|e| e.1 == i) {
                 ie += 1;
-            };
+            }
             assert_eq!(adjm.out_edge(i).len(), oe);
             assert_eq!(adjm.in_edge(i).len(), ie);
         }
