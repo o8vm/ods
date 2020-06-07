@@ -38,6 +38,17 @@ impl<T> Array<T> {
     }
 }
 
+impl<T: PartialEq> Array<T> {
+    pub fn contains(&self, j: T) -> bool {
+        for i in 0..self.n {
+            if self.a.get(i).unwrap().as_ref() == Some(&j) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
         self.n
