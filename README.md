@@ -53,5 +53,10 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter12 (Graphs)
     * [AdjacencyMatrix](/chapter12/src/adjacencymatrix.rs)
     * [AdjacencyLists](/chapter12/src/adjacencylists.rs)
-    * Breadth-First Search(*coming soon*)
-    * Depth-First Search(*coming soon*)
+    * [Breadth-First Search](/chapter12/src/bfs.rs)
+    * [Depth-First Search](/chapter12/src/dfs.rs)
+* chapter13 (Data Structures for Integers)
+    * BinaryTrie(*coming soon*)
+    * XFastTrie(*coming soon*)
+    * YFastTrie(*coming soon*)
+* chapter14 (External Memory Searching) ...
