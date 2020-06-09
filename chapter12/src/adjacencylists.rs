@@ -1,6 +1,7 @@
 use chapter01::interface::{Graph, List};
 use chapter02::arraystack::Array as ArrayStack;
 
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct AdjacencyLists {
     n: usize,
     adj: Vec<ArrayStack<usize>>,
