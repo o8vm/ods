@@ -13,6 +13,9 @@ impl AdjacencyLists {
             adj: vec![ArrayStack::new(); n],
         }
     }
+    pub fn nvertices(&self) -> usize {
+        self.n
+    }
 }
 
 impl Graph for AdjacencyLists {
@@ -26,7 +29,7 @@ impl Graph for AdjacencyLists {
             for k in 0..e.size() {
                 if e.get(k) == Some(j) {
                     e.remove(k);
-                    return
+                    return;
                 }
             }
         }

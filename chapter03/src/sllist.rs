@@ -31,6 +31,9 @@ impl<T> SLList<T> {
             n: 0,
         }
     }
+    pub fn size(&self) -> usize {
+        self.n
+    }
 }
 
 impl<T> Stack<T> for SLList<T> {
