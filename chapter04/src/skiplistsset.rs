@@ -28,11 +28,11 @@ impl<T: Ord> Node<T> {
 }
 
 impl<T: Ord + Default> SkiplistSSet<T> {
-    pub fn new(h: usize) -> Self {
-        let sentinel = Node::new(Default::default(), h);
+    pub fn new() -> Self {
+        let sentinel = Node::new(Default::default(), 32);
         Self {
             head: Some(sentinel),
-            stack: vec![None; h + 1],
+            stack: vec![None; 32 + 1],
             h: 0,
             n: 0,
         }
@@ -97,17 +97,24 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                             sentinel.borrow_mut().next.push(None);
                         });
                     self.h += 1;
-                    self.stack.push(Some(Rc::clone(sentinel)));
+                    if let Some(e) = self.stack.get_mut(self.h) {
+                        e.replace(Rc::clone(sentinel));
+                    } else {
+                        self.stack.push(Some(Rc::clone(sentinel)));
+                    }
                 }
                 let height = w.borrow().next.len() - 1;
                 for i in 0..=height {
-                    match self.stack[i] {
+                    match self.stack[i].take() {
                         Some(ref u) => {
                             w.borrow_mut().next[i] = u.borrow_mut().next[i].take();
                             u.borrow_mut().next[i] = Some(Rc::clone(&w));
                         }
                         None => break,
                     };
+                }
+                for e in self.stack.iter_mut() {
+                    e.take();
                 }
                 self.n += 1;
                 true
@@ -138,11 +145,9 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                                 n.borrow_mut().next[r] = Some(next);
                             } else {
                                 if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
-                                    self.head
-                                        .as_ref()
-                                        .map(|sentinel| sentinel.borrow_mut().next.pop());
-                                    self.stack.pop();
-                                    self.h -= 1;
+                                    if self.h > 0 {
+                                        self.h -= 1;
+                                    }
                                 }
                             }
                         });
@@ -173,7 +178,7 @@ mod test {
     use chapter01::interface::SSet;
     #[test]
     fn test_skiplistsset() {
-        let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new(6);
+        let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new();
         skiplistsset.add(0);
         skiplistsset.add(1);
         skiplistsset.add(2);
@@ -200,6 +205,13 @@ mod test {
             assert_eq!(skiplistsset.find(&i), Some(i));
         }
         assert_eq!(skiplistsset.remove(&9), None);
-        println!("\nSkiplistSSet = {:?}\n", skiplistsset);
+        let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new();
+        for i in 0..200 {
+            skiplistsset.add(i);
+        }
+        for i in 0..200 {
+            assert_eq!(Some(i), skiplistsset.remove(&i));
+            
+        }
     }
 }
