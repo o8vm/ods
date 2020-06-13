@@ -569,7 +569,9 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use rand::{thread_rng, Rng};
     use chapter01::interface::SSet;
+    use chapter04::skiplistsset::SkiplistSSet;
     #[test]
     fn test_redblacktree() {
         let mut redblacktree = RedBlackTree::<usize>::new();
@@ -628,5 +630,38 @@ mod test {
         assert_eq!(redblacktree.remove(&8), Some(8));
         //println!("{:#?}", redblacktree);
         assert!(redblacktree.is_a_valid_red_black_tree());
+        let mut rng = thread_rng();
+        let n = 200;
+        let mut redblacktree = RedBlackTree::<i32>::new();
+        let mut set: SkiplistSSet<i32> = SkiplistSSet::new();
+        for _ in 0..5 {
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                redblacktree.add(x);
+                set.add(x);
+                assert!(redblacktree.is_a_valid_red_black_tree());
+            }
+            assert_eq!(redblacktree.size(), set.size());
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = set.find(&x);
+                let y2 = redblacktree.find(&x);
+                assert_eq!(y1, y2);
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let b1 = set.remove(&x);
+                let b2 = redblacktree.remove(&x);
+                assert_eq!(b1, b2);
+                assert!(redblacktree.is_a_valid_red_black_tree());
+            }
+            assert_eq!(redblacktree.size(), set.size());
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = set.find(&x);
+                let y2 = redblacktree.find(&x);
+                assert_eq!(y1, y2);
+            }
+        }
     }
 }
