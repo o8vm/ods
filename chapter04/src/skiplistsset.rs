@@ -7,7 +7,6 @@ type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SkiplistSSet<T: Ord> {
     head: Link<T>,
-    stack: Vec<Link<T>>,
     h: usize,
     n: usize,
 }
@@ -29,10 +28,9 @@ impl<T: Ord> Node<T> {
 
 impl<T: Ord + Default> SkiplistSSet<T> {
     pub fn new() -> Self {
-        let sentinel = Node::new(Default::default(), 32);
+        let sentinel = Node::new(Default::default(), 5);
         Self {
             head: Some(sentinel),
-            stack: vec![None; 32 + 1],
             h: 0,
             n: 0,
         }
@@ -68,7 +66,7 @@ impl<T: Ord + Default> SkiplistSSet<T> {
     }
 }
 
-impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
+impl<T: Ord + Clone + Default + std::fmt::Debug> SSet<T> for SkiplistSSet<T> {
     fn size(&self) -> usize {
         self.n
     }
@@ -76,6 +74,7 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
     fn add(&mut self, x: T) -> bool {
         match self.head {
             Some(ref sentinel) => {
+                let mut stack: Vec<Link<T>> = vec![None; sentinel.borrow().next.len()];
                 let mut n = Rc::clone(sentinel);
                 for r in (0..=self.h).rev() {
                     loop {
@@ -86,7 +85,7 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                             _ => break,
                         };
                     }
-                    self.stack[r] = Some(Rc::clone(&n));
+                    stack[r] = Some(Rc::clone(&n));
                 }
                 let w = Node::new(x, Self::pick_height());
                 while self.h < w.borrow().next.len() - 1 {
@@ -97,24 +96,21 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                             sentinel.borrow_mut().next.push(None);
                         });
                     self.h += 1;
-                    if let Some(e) = self.stack.get_mut(self.h) {
+                    if let Some(e) = stack.get_mut(self.h) {
                         e.replace(Rc::clone(sentinel));
                     } else {
-                        self.stack.push(Some(Rc::clone(sentinel)));
+                        stack.push(Some(Rc::clone(sentinel)));
                     }
                 }
                 let height = w.borrow().next.len() - 1;
                 for i in 0..=height {
-                    match self.stack[i].take() {
+                    match stack[i].take() {
                         Some(ref u) => {
                             w.borrow_mut().next[i] = u.borrow_mut().next[i].take();
                             u.borrow_mut().next[i] = Some(Rc::clone(&w));
                         }
                         None => break,
                     };
-                }
-                for e in self.stack.iter_mut() {
-                    e.take();
                 }
                 self.n += 1;
                 true
@@ -176,6 +172,7 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
 mod test {
     use super::SkiplistSSet;
     use chapter01::interface::SSet;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_skiplistsset() {
         let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new();
@@ -206,12 +203,17 @@ mod test {
         }
         assert_eq!(skiplistsset.remove(&9), None);
         let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new();
-        for i in 0..200 {
-            skiplistsset.add(i);
-        }
-        for i in 0..200 {
-            assert_eq!(Some(i), skiplistsset.remove(&i));
-            
+        let n = 200;
+        let mut rng = thread_rng();
+        for _ in 0..5 {
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                skiplistsset.add(x);
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                skiplistsset.remove(&x);
+            }
         }
     }
 }
