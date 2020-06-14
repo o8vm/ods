@@ -569,9 +569,9 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use rand::{thread_rng, Rng};
     use chapter01::interface::SSet;
     use chapter04::skiplistsset::SkiplistSSet;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_redblacktree() {
         let mut redblacktree = RedBlackTree::<usize>::new();
