@@ -66,7 +66,7 @@ impl<T: Ord + Default> SkiplistSSet<T> {
     }
 }
 
-impl<T: Ord + Clone + Default + std::fmt::Debug> SSet<T> for SkiplistSSet<T> {
+impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
     fn size(&self) -> usize {
         self.n
     }
