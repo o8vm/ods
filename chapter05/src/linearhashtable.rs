@@ -37,7 +37,7 @@ impl<T> Default for Elem<T> {
 impl<T: Hash> Tabulation for T {}
 impl<T> LinearHashTable<T>
 where
-    T: Eq + Clone + Hash,
+    T: PartialEq + Clone + Hash,
 {
     const W: u32 = (std::mem::size_of::<usize>() * 8) as u32;
     pub fn new() -> Self {
@@ -97,7 +97,7 @@ where
 
 impl<T> USet<T> for LinearHashTable<T>
 where
-    T: Eq + Clone + Hash,
+    T: PartialEq + Clone + Hash,
 {
     fn size(&self) -> usize {
         self.n

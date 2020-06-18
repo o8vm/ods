@@ -13,7 +13,7 @@ pub struct ChainedHashTable<T> {
 
 impl<T> ChainedHashTable<T>
 where
-    T: Eq + Clone + Hash,
+    T: PartialEq + Clone + Hash,
 {
     const W: usize = std::mem::size_of::<usize>() * 8;
     pub fn new() -> Self {
@@ -53,7 +53,7 @@ where
 
 impl<T> USet<T> for ChainedHashTable<T>
 where
-    T: Eq + Clone + Hash,
+    T: PartialEq + Clone + Hash,
 {
     fn size(&self) -> usize {
         self.n

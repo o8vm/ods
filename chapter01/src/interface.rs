@@ -16,7 +16,7 @@ pub trait List<T: Clone> {
     fn remove(&mut self, i: usize) -> Option<T>;
 }
 
-pub trait USet<T: Eq + Clone> {
+pub trait USet<T: PartialEq + Clone> {
     fn size(&self) -> usize;
     fn add(&mut self, x: T) -> bool;
     fn remove(&mut self, x: &T) -> Option<T>;
