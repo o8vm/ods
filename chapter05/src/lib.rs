@@ -22,3 +22,14 @@ pub fn byte_chunks_64(h: u64) -> [u8; 8] {
         ((h >> 56) & 0xff) as u8,
     ]
 }
+
+pub trait Tabulation {
+    fn hashcode(&self) -> usize
+    where
+        Self: Hash,
+    {
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish() as usize
+    }
+}

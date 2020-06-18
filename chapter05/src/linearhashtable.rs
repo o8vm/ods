@@ -1,4 +1,4 @@
-use super::{byte_chunks_64, hashcode};
+use super::{byte_chunks_64, Tabulation};
 use chapter01::interface::USet;
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
@@ -34,7 +34,7 @@ impl<T> Default for Elem<T> {
         Elem::Null
     }
 }
-
+impl<T: Hash> Tabulation for T {}
 impl<T> LinearHashTable<T>
 where
     T: Eq + Clone + Hash,
@@ -56,8 +56,9 @@ where
     }
     fn hash(&self, x: &T) -> usize {
         // u64 tabulation hashing
+
         let mut v = 0u64;
-        let h = hashcode(x);
+        let h = x.hashcode();
         let chunks = byte_chunks_64(h as u64);
         for (i, c) in chunks.iter().enumerate() {
             v ^= TAB[i][*c as usize];
