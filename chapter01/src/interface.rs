@@ -23,7 +23,7 @@ pub trait USet<T: PartialEq + Clone> {
     fn find(&self, x: &T) -> Option<T>;
 }
 
-pub trait SSet<T: Ord + Clone> {
+pub trait SSet<T: PartialOrd + Clone> {
     fn size(&self) -> usize;
     fn add(&mut self, x: T) -> bool;
     fn remove(&mut self, x: &T) -> Option<T>;
