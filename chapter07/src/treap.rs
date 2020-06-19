@@ -30,7 +30,7 @@ impl<T: Default> TreapNode<T> {
 
 impl<T> Treap<T>
 where
-    T: Ord + Clone,
+    T: PartialOrd + Clone,
 {
     pub fn new() -> Self {
         Self { n: 0, r: None }
@@ -202,9 +202,62 @@ where
     }
 }
 
+impl<T> Treap<T>
+where
+    T: PartialOrd + Clone + Default,
+{
+    pub fn split(&mut self, x: T) -> Treap<T> {
+        let mut u = self.find_last(&x);
+        let s = Rc::new(TreapNode::<T>::new(Default::default()));
+        match u {
+            Some(ref u) if u.right.borrow().is_none() => {
+                u.right.borrow_mut().replace(s.clone());
+            }
+            _ => {
+                let ur = u.as_ref().and_then(|u| u.right.borrow().clone());
+                u = ur;
+                while let Some(v) = u.as_ref().and_then(|u| u.left.borrow().clone()) {
+                    u = Some(v);
+                }
+                u.as_ref().map(|u| {
+                    u.left.borrow_mut().replace(s.clone());
+                });
+            }
+        }
+        *s.parent.borrow_mut() = u.as_ref().map(|u| Rc::downgrade(&u));
+        *s.p.borrow_mut() = usize::MIN;
+        self.bubbleup(&s);
+        self.r = s.right.borrow_mut().take();
+        if let Some(ref r) = self.r {
+            *r.parent.borrow_mut() = None;
+        }
+        self.n = usize::MIN;
+        let mut ret = Treap::<T>::new();
+        ret.r = s.left.borrow_mut().take();
+        if let Some(ref r) = ret.r {
+            *r.parent.borrow_mut() = None;
+        }
+        ret.n = usize::MIN;
+        ret
+    }
+    pub fn absorb(&mut self, mut t: Treap<T>) {
+        let s = Rc::new(TreapNode::<T>::new(Default::default()));
+        *s.right.borrow_mut() = self.r.clone();
+        if let Some(ref r) = self.r {
+            r.parent.borrow_mut().replace(Rc::downgrade(&s));
+        }
+        *s.left.borrow_mut() = t.r.clone();
+        if let Some(r2) = t.r.take() {
+            r2.parent.borrow_mut().replace(Rc::downgrade(&s));
+        }
+        self.trickle_down(&s);
+        self.splice(s);
+    }
+}
+
 impl<T> SSet<T> for Treap<T>
 where
-    T: Ord + Clone + Default,
+    T: PartialOrd + Clone + Default,
 {
     fn size(&self) -> usize {
         self.n
