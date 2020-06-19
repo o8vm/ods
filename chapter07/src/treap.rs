@@ -243,13 +243,14 @@ where
     pub fn absorb(&mut self, mut t: Treap<T>) {
         let s = Rc::new(TreapNode::<T>::new(Default::default()));
         *s.right.borrow_mut() = self.r.clone();
-        if let Some(ref r) = self.r {
+        if let Some(ref r) = self.r.take() {
             r.parent.borrow_mut().replace(Rc::downgrade(&s));
         }
         *s.left.borrow_mut() = t.r.clone();
         if let Some(r2) = t.r.take() {
             r2.parent.borrow_mut().replace(Rc::downgrade(&s));
         }
+        self.r.replace(s.clone());
         self.trickle_down(&s);
         self.splice(s);
     }
