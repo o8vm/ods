@@ -39,7 +39,7 @@ where
         let w = u.right.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
-        p.map(|p| {
+        if let Some(p) = p {
             let left = p.left.borrow().clone();
             match left {
                 Some(ref left) if Rc::ptr_eq(left, u) => {
@@ -49,7 +49,7 @@ where
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
-        });
+        }
         *u.right.borrow_mut() = w.left.borrow_mut().take();
         if let Some(ref right) = *u.right.borrow() {
             right.parent.borrow_mut().replace(Rc::downgrade(u));
@@ -64,7 +64,7 @@ where
         let w = u.left.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
-        p.map(|p| {
+        if let Some(p) = p {
             let left = p.left.borrow().clone();
             match left {
                 Some(ref left) if Rc::ptr_eq(left, u) => {
@@ -74,7 +74,7 @@ where
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
-        });
+        }
         *u.left.borrow_mut() = w.right.borrow_mut().take();
         if let Some(ref left) = *u.left.borrow() {
             left.parent.borrow_mut().replace(Rc::downgrade(u));
@@ -159,7 +159,7 @@ where
                 p = None;
             } else {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
-                p.as_ref().map(|p| {
+                if let Some(p) = p.as_ref() {
                     let left = p.left.borrow().clone();
                     match left {
                         Some(ref left) if Rc::ptr_eq(left, &u) => {
@@ -169,7 +169,7 @@ where
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
-                });
+                }
             }
         }
         match (s, p) {
@@ -219,9 +219,9 @@ where
                 while let Some(v) = u.as_ref().and_then(|u| u.left.borrow().clone()) {
                     u = Some(v);
                 }
-                u.as_ref().map(|u| {
+                if let Some(u) = u.as_ref() {
                     u.left.borrow_mut().replace(s.clone());
-                });
+                }
             }
         }
         *s.parent.borrow_mut() = u.as_ref().map(|u| Rc::downgrade(&u));

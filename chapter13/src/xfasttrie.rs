@@ -1,9 +1,10 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
+use crate::USizeV;
 use chapter01::interface::{SSet, USet};
 use chapter05::linearhashtable::LinearHashTable;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use std::rc::{Rc, Weak};
-use crate::USizeV;
 
 #[derive(Clone, Debug, Default)]
 pub struct BTNode<T: USizeV + Default> {
@@ -172,13 +173,16 @@ impl<T: USizeV + Default + PartialOrd + Clone> SSet<T> for XFastTrie<T> {
         // 2 - remove u from linked list
         let next = u.next.borrow_mut().take();
         let prev = u.prev.borrow_mut().take();
-        next.as_ref().map(|n| *n.prev.borrow_mut() = prev.clone());
-        prev.as_ref()
-            .map(|p| *p.upgrade().unwrap().next.borrow_mut() = next.clone());
+        if let Some(n) = next.as_ref() {
+            *n.prev.borrow_mut() = prev.clone();
+        }
+        if let Some(p) = prev.as_ref() {
+            *p.upgrade().unwrap().next.borrow_mut() = next.clone();
+        }
         let mut v = u.clone();
 
         // 3 - delete nodes on path to u
-        for i in (0..=(Self::W - 1)).rev() {
+        for i in (0..Self::W).rev() {
             c = (ix >> (Self::W - i - 1)) & 1;
             let vp = v
                 .parent
