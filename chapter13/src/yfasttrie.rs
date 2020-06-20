@@ -5,26 +5,15 @@ use chapter07::treap::Treap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 struct YPair<T: USizeV + Default> {
     ix: usize,
     t: Rc<RefCell<Treap<T>>>,
 }
 
-impl<'a, T: USizeV + Default> USizeV for YPair<T> {
+impl<T: USizeV + Default> USizeV for YPair<T> {
     fn usize_value(&self) -> usize {
         self.ix
-    }
-}
-
-impl<'a, T> Default for YPair<T> 
-where
-    T: USizeV + Default + PartialOrd + Clone,
-{
-    fn default() -> Self {
-        Self {
-            ..Default::default()
-        }
     }
 }
 
@@ -79,7 +68,7 @@ where
     const W: usize = 32;
     pub fn new() -> Self {
         let mut xft = XFastTrie::new();
-        //xft.add(YPair::with_x((1<<Self::W)-1));
+        xft.add(YPair::with_x((1<<Self::W)-1));
         Self {
             n: 0,
             xft,
@@ -134,7 +123,7 @@ mod test {
         let n = 200;
         let mut redblacktree = RedBlackTree::<i32>::new();
         let mut yfasttrie = YFastTrie::<i32>::new();
-        /*
+ 
         for _ in 0..5 {
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
@@ -149,6 +138,5 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
-        */
     }
 }
