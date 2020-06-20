@@ -61,6 +61,44 @@ impl<T: USizeV + Default> XFastTrie<T> {
             t: vec![LinearHashTable::new(); Self::W + 1].into_boxed_slice(),
         }
     }
+    pub fn find_node(&self, ix: usize) -> Option<Rc<BTNode<T>>> {
+        let mut l = 0;
+        let mut h = Self::W + 1;
+        let mut u = self.r.clone();
+        let q = Rc::new(BTNode::new());
+        while h - l > 1 {
+            let i = (l + h) / 2;
+            *q.prefix.borrow_mut() = ix >> (Self::W - i);
+            match self.t[i].find(&q) {
+                None => h = i,
+                Some(v) => {
+                    u = v;
+                    l = i;
+                }
+            }
+        }
+        if l == Self::W {
+            return Some(u.clone())
+        }
+        let c = (ix >> (Self::W - l - 1)) & 1;
+        let pred = if c == 1 {
+            u.jump.borrow().clone()
+        } else {
+            let j = u.jump.borrow().clone();
+            match j {
+                Some(ref j) => j.prev.borrow().as_ref().and_then(|p| p.upgrade()),
+                None => None,
+            }
+        };
+        match pred {
+            Some(pred) => match &*pred.next.borrow() {
+                Some(n) if n.next.borrow().is_none() => None,
+                Some(n) if n.prev.borrow().is_none() => None,
+                _ => pred.next.borrow().clone(),
+            },
+            _ => None,
+        }
+    }
 }
 
 impl<T: USizeV + Default + PartialOrd + Clone> SSet<T> for XFastTrie<T> {
