@@ -8,7 +8,7 @@ use std::rc::{Rc, Weak};
 
 #[derive(Clone, Debug, Default)]
 pub struct BTNode<T: USizeV + Default> {
-    x: RefCell<T>,
+    pub x: RefCell<T>,
     prefix: RefCell<usize>,
     child: [RefCell<Option<Rc<BTNode<T>>>>; 2], // 0 = left, 1 = right
     jump: RefCell<Option<Rc<BTNode<T>>>>,
