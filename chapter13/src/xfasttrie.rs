@@ -41,7 +41,7 @@ pub struct XFastTrie<T: USizeV + Default> {
     r: Rc<BTNode<T>>,
     head: Option<Rc<BTNode<T>>>,   // dummy1
     tail: Option<Weak<BTNode<T>>>, // dummy2
-    t: Vec<LinearHashTable<Rc<BTNode<T>>>>,
+    t: Box<[LinearHashTable<Rc<BTNode<T>>>]>,
 }
 
 impl<T: USizeV + Default> XFastTrie<T> {
@@ -58,7 +58,7 @@ impl<T: USizeV + Default> XFastTrie<T> {
             n: 0,
             head: Some(dummy1),
             tail: Some(Rc::downgrade(&dummy2)),
-            t: vec![LinearHashTable::new(); XFastTrie::<T>::W + 1],
+            t: vec![LinearHashTable::new(); Self::W + 1].into_boxed_slice(),
         }
     }
 }
