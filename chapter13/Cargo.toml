@@ -10,4 +10,5 @@ edition = "2018"
 chapter01 = { path = "../chapter01" }
 chapter09 = { path = "../chapter09" }
 chapter05 = { path = "../chapter05" }
+chapter07 = { path = "../chapter07" }
 rand = "0.7.3"
