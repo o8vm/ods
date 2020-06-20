@@ -3,51 +3,52 @@ use chapter05::linearhashtable::LinearHashTable;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use std::rc::{Rc, Weak};
+use crate::USizeV;
 
 #[derive(Clone, Debug, Default)]
-pub struct BTNode {
-    x: RefCell<i32>,
+pub struct BTNode<T: USizeV + Default> {
+    x: RefCell<T>,
     prefix: RefCell<usize>,
-    child: [RefCell<Option<Rc<BTNode>>>; 2], // 0 = left, 1 = right
-    jump: RefCell<Option<Rc<BTNode>>>,
-    parent: RefCell<Option<Weak<BTNode>>>,
-    prev: RefCell<Option<Weak<BTNode>>>, // left
-    next: RefCell<Option<Rc<BTNode>>>,   // right
+    child: [RefCell<Option<Rc<BTNode<T>>>>; 2], // 0 = left, 1 = right
+    jump: RefCell<Option<Rc<BTNode<T>>>>,
+    parent: RefCell<Option<Weak<BTNode<T>>>>,
+    prev: RefCell<Option<Weak<BTNode<T>>>>, // left
+    next: RefCell<Option<Rc<BTNode<T>>>>,   // right
 }
 
-impl BTNode {
+impl<T: USizeV + Default> BTNode<T> {
     pub fn new() -> Self {
         Default::default()
     }
 }
 
-impl PartialEq for BTNode {
+impl<T: USizeV + Default> PartialEq for BTNode<T> {
     fn eq(&self, other: &Self) -> bool {
         *self.prefix.borrow() == *other.prefix.borrow()
     }
 }
 
-impl Hash for BTNode {
+impl<T: USizeV + Default> Hash for BTNode<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.prefix.borrow().hash(state);
     }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct XFastTrie {
+pub struct XFastTrie<T: USizeV + Default> {
     n: usize,
-    r: Rc<BTNode>,
-    head: Option<Rc<BTNode>>,   // dummy1
-    tail: Option<Weak<BTNode>>, // dummy2
-    t: Vec<LinearHashTable<Rc<BTNode>>>,
+    r: Rc<BTNode<T>>,
+    head: Option<Rc<BTNode<T>>>,   // dummy1
+    tail: Option<Weak<BTNode<T>>>, // dummy2
+    t: Vec<LinearHashTable<Rc<BTNode<T>>>>,
 }
 
-impl XFastTrie {
-    const W: usize = 32;
+impl<T: USizeV + Default> XFastTrie<T> {
+    const W: usize = 64;
     pub fn new() -> Self {
         let r = Rc::new(BTNode::new());
-        let dummy1: Rc<BTNode> = Default::default();
-        let dummy2: Rc<BTNode> = Default::default();
+        let dummy1: Rc<BTNode<T>> = Default::default();
+        let dummy2: Rc<BTNode<T>> = Default::default();
         *dummy1.next.borrow_mut() = Some(dummy2.clone());
         *dummy2.prev.borrow_mut() = Some(Rc::downgrade(&dummy1));
         *r.jump.borrow_mut() = Some(dummy2.clone());
@@ -56,26 +57,26 @@ impl XFastTrie {
             n: 0,
             head: Some(dummy1),
             tail: Some(Rc::downgrade(&dummy2)),
-            t: vec![LinearHashTable::new(); XFastTrie::W + 1],
+            t: vec![LinearHashTable::new(); XFastTrie::<T>::W + 1],
         }
     }
 }
 
-impl SSet<i32> for XFastTrie {
+impl<T: USizeV + Default + PartialOrd + Clone> SSet<T> for XFastTrie<T> {
     fn size(&self) -> usize {
         self.n
     }
 
-    fn add(&mut self, x: i32) -> bool {
+    fn add(&mut self, x: T) -> bool {
         let mut c = 0;
-        let ix = x as usize;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
 
         // 1 - search for ix until falling out of the trie
         let mut i = 0;
         let mut next;
-        for _ in 0..XFastTrie::W {
-            c = (ix >> (XFastTrie::W - i - 1)) & 1;
+        for _ in 0..Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             match *u.child[c].borrow() {
                 Some(ref c) => next = c.clone(),
                 None => break,
@@ -83,7 +84,7 @@ impl SSet<i32> for XFastTrie {
             u = next;
             i += 1;
         }
-        if i == XFastTrie::W {
+        if i == Self::W {
             return false; // already contains x - abort
         }
         let pred = match c {
@@ -98,10 +99,10 @@ impl SSet<i32> for XFastTrie {
         };
 
         // 2 - add path to ix
-        while i < XFastTrie::W {
-            c = (ix >> (XFastTrie::W - i - 1)) & 1;
+        while i < XFastTrie::<T>::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             let n = Rc::new(BTNode::new());
-            *n.prefix.borrow_mut() = ix >> (XFastTrie::W - i - 1);
+            *n.prefix.borrow_mut() = ix >> (Self::W - i - 1);
             self.t[i + 1].add(n.clone());
             n.parent.borrow_mut().replace(Rc::downgrade(&u));
             u.child[c].borrow_mut().replace(n);
@@ -132,7 +133,7 @@ impl SSet<i32> for XFastTrie {
                         .jump
                         .borrow()
                         .as_ref()
-                        .filter(|j| (*j.x.borrow() as usize) > ix)
+                        .filter(|j| (*j.x.borrow()).usize_value() > ix)
                         .is_some()))
                 || (vi.child[1].borrow().is_none()
                     && (vi.jump.borrow().is_none()
@@ -140,7 +141,7 @@ impl SSet<i32> for XFastTrie {
                             .jump
                             .borrow()
                             .as_ref()
-                            .filter(|j| (*j.x.borrow() as usize) < ix)
+                            .filter(|j| (*j.x.borrow()).usize_value() < ix)
                             .is_some()))
             {
                 vi.jump.borrow_mut().replace(u.clone());
@@ -150,16 +151,16 @@ impl SSet<i32> for XFastTrie {
         self.n += 1;
         true
     }
-    fn remove(&mut self, x: &i32) -> Option<i32> {
+    fn remove(&mut self, x: &T) -> Option<T> {
         let mut c;
-        let ix = *x as usize;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
 
         // 1 - find leaf, u, containing x
         let mut i = 0;
         let mut next;
-        for _ in 0..XFastTrie::W {
-            c = (ix >> (XFastTrie::W - i - 1)) & 1;
+        for _ in 0..Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             match *u.child[c].borrow() {
                 Some(ref c) => next = c.clone(),
                 None => return None,
@@ -177,8 +178,8 @@ impl SSet<i32> for XFastTrie {
         let mut v = u.clone();
 
         // 3 - delete nodes on path to u
-        for i in (0..=(XFastTrie::W - 1)).rev() {
-            c = (ix >> (XFastTrie::W - i - 1)) & 1;
+        for i in (0..=(Self::W - 1)).rev() {
+            c = (ix >> (Self::W - i - 1)) & 1;
             let vp = v
                 .parent
                 .borrow()
@@ -221,15 +222,15 @@ impl SSet<i32> for XFastTrie {
         Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
     }
 
-    fn find(&self, x: &i32) -> Option<i32> {
+    fn find(&self, x: &T) -> Option<T> {
         let mut l = 0;
-        let mut h = XFastTrie::W + 1;
-        let ix = *x as usize;
+        let mut h = Self::W + 1;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
         let q = Rc::new(BTNode::new());
         while h - l > 1 {
             let i = (l + h) / 2;
-            *q.prefix.borrow_mut() = ix >> (XFastTrie::W - i);
+            *q.prefix.borrow_mut() = ix >> (Self::W - i);
             match self.t[i].find(&q) {
                 None => h = i,
                 Some(v) => {
@@ -238,10 +239,10 @@ impl SSet<i32> for XFastTrie {
                 }
             }
         }
-        if l == XFastTrie::W {
-            return Some(*u.x.borrow());
+        if l == Self::W {
+            return Some(u.x.borrow().clone());
         }
-        let c = (ix >> (XFastTrie::W - l - 1)) & 1;
+        let c = (ix >> (Self::W - l - 1)) & 1;
         let pred = if c == 1 {
             u.jump.borrow().clone()
         } else {
@@ -255,7 +256,7 @@ impl SSet<i32> for XFastTrie {
             Some(pred) => match &*pred.next.borrow() {
                 Some(n) if n.next.borrow().is_none() => None,
                 Some(n) if n.prev.borrow().is_none() => None,
-                _ => pred.next.borrow().as_ref().map(|u| *u.x.borrow()),
+                _ => pred.next.borrow().as_ref().map(|u| u.x.borrow().clone()),
             },
             _ => None,
         }

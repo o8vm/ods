@@ -1,37 +1,38 @@
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
+use crate::USizeV;
 
 #[derive(Clone, Debug, Default)]
-pub struct BTNode {
-    x: RefCell<i32>,
-    child: [RefCell<Option<Rc<BTNode>>>; 2], // 0 = left, 1 = right
-    jump: RefCell<Option<Rc<BTNode>>>,
-    parent: RefCell<Option<Weak<BTNode>>>,
-    prev: RefCell<Option<Weak<BTNode>>>, // left
-    next: RefCell<Option<Rc<BTNode>>>,   // right
+pub struct BTNode<T: USizeV + Default> {
+    x: RefCell<T>,
+    child: [RefCell<Option<Rc<BTNode<T>>>>; 2], // 0 = left, 1 = right
+    jump: RefCell<Option<Rc<BTNode<T>>>>,
+    parent: RefCell<Option<Weak<BTNode<T>>>>,
+    prev: RefCell<Option<Weak<BTNode<T>>>>, // left
+    next: RefCell<Option<Rc<BTNode<T>>>>,   // right
 }
 
-impl BTNode {
+impl<T: USizeV + Default> BTNode<T> {
     pub fn new() -> Self {
         Default::default()
     }
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct BinaryTrie {
+pub struct BinaryTrie<T: USizeV + Default> {
     n: usize,
-    r: Rc<BTNode>,
-    head: Option<Rc<BTNode>>,   // dummy1
-    tail: Option<Weak<BTNode>>, // dummy2
+    r: Rc<BTNode<T>>,
+    head: Option<Rc<BTNode<T>>>,   // dummy1
+    tail: Option<Weak<BTNode<T>>>, // dummy2
 }
 
-impl BinaryTrie {
-    const W: usize = 32;
+impl<T: USizeV + Default> BinaryTrie<T> {
+    const W: usize = 64;
     pub fn new() -> Self {
         let r = Rc::new(BTNode::new());
-        let dummy1: Rc<BTNode> = Default::default();
-        let dummy2: Rc<BTNode> = Default::default();
+        let dummy1: Rc<BTNode<T>> = Default::default();
+        let dummy2: Rc<BTNode<T>> = Default::default();
         *dummy1.next.borrow_mut() = Some(dummy2.clone());
         *dummy2.prev.borrow_mut() = Some(Rc::downgrade(&dummy1));
         *r.jump.borrow_mut() = Some(dummy2.clone());
@@ -44,20 +45,20 @@ impl BinaryTrie {
     }
 }
 
-impl SSet<i32> for BinaryTrie {
+impl<T: USizeV + Default + PartialOrd + Clone> SSet<T> for BinaryTrie<T> {
     fn size(&self) -> usize {
         self.n
     }
-    fn add(&mut self, x: i32) -> bool {
+    fn add(&mut self, x: T) -> bool {
         let mut c = 0;
-        let ix = x as usize;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
 
         // 1 - search for ix until falling out of the trie
         let mut i = 0;
         let mut next;
-        for _ in 0..BinaryTrie::W {
-            c = (ix >> (BinaryTrie::W - i - 1)) & 1;
+        for _ in 0..Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             match *u.child[c].borrow() {
                 Some(ref c) => next = c.clone(),
                 None => break,
@@ -65,7 +66,7 @@ impl SSet<i32> for BinaryTrie {
             u = next;
             i += 1;
         }
-        if i == BinaryTrie::W {
+        if i == Self::W {
             return false; // already contains x - abort
         }
         let pred = match c {
@@ -79,8 +80,8 @@ impl SSet<i32> for BinaryTrie {
             _ => u.jump.borrow_mut().take(), // right
         };
         // 2 - add path to ix
-        while i < BinaryTrie::W {
-            c = (ix >> (BinaryTrie::W - i - 1)) & 1;
+        while i < Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             let n = Rc::new(BTNode::new());
             n.parent.borrow_mut().replace(Rc::downgrade(&u));
             u.child[c].borrow_mut().replace(n);
@@ -111,7 +112,7 @@ impl SSet<i32> for BinaryTrie {
                         .jump
                         .borrow()
                         .as_ref()
-                        .filter(|j| (*j.x.borrow() as usize) > ix)
+                        .filter(|j| (*j.x.borrow()).usize_value() > ix)
                         .is_some()))
                 || (vi.child[1].borrow().is_none()
                     && (vi.jump.borrow().is_none()
@@ -119,7 +120,7 @@ impl SSet<i32> for BinaryTrie {
                             .jump
                             .borrow()
                             .as_ref()
-                            .filter(|j| (*j.x.borrow() as usize) < ix)
+                            .filter(|j| (*j.x.borrow()).usize_value() < ix)
                             .is_some()))
             {
                 vi.jump.borrow_mut().replace(u.clone());
@@ -129,16 +130,16 @@ impl SSet<i32> for BinaryTrie {
         self.n += 1;
         true
     }
-    fn remove(&mut self, x: &i32) -> Option<i32> {
+    fn remove(&mut self, x: &T) -> Option<T> {
         let mut c;
-        let ix = *x as usize;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
 
         // 1 - find leaf, u, containing x
         let mut i = 0;
         let mut next;
-        for _ in 0..BinaryTrie::W {
-            c = (ix >> (BinaryTrie::W - i - 1)) & 1;
+        for _ in 0..Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             match *u.child[c].borrow() {
                 Some(ref c) => next = c.clone(),
                 None => return None,
@@ -156,8 +157,8 @@ impl SSet<i32> for BinaryTrie {
         let mut v = u.clone();
 
         // 3 - delete nodes on path to u
-        for i in (0..=(BinaryTrie::W - 1)).rev() {
-            c = (ix >> (BinaryTrie::W - i - 1)) & 1;
+        for i in (0..=(Self::W - 1)).rev() {
+            c = (ix >> (Self::W - i - 1)) & 1;
             let vp = v
                 .parent
                 .borrow()
@@ -199,14 +200,14 @@ impl SSet<i32> for BinaryTrie {
         self.n -= 1;
         Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
     }
-    fn find(&self, x: &i32) -> Option<i32> {
+    fn find(&self, x: &T) -> Option<T> {
         let mut i = 0;
         let mut c = 0;
-        let ix = *x as usize;
+        let ix = x.usize_value();
         let mut u = self.r.clone();
         let mut next;
-        for _ in 0..BinaryTrie::W {
-            c = (ix >> (BinaryTrie::W - i - 1)) & 1;
+        for _ in 0..Self::W {
+            c = (ix >> (Self::W - i - 1)) & 1;
             match *u.child[c].borrow() {
                 Some(ref c) => next = c.clone(),
                 None => break,
@@ -214,8 +215,8 @@ impl SSet<i32> for BinaryTrie {
             u = next;
             i += 1;
         }
-        if i == BinaryTrie::W {
-            return Some(*u.x.borrow());
+        if i == Self::W {
+            return Some(u.x.borrow().clone());
         }
         let n = if c == 0 {
             u.jump.borrow().clone()
@@ -229,7 +230,7 @@ impl SSet<i32> for BinaryTrie {
         match n {
             Some(ref n) if n.next.borrow().is_none() => None,
             Some(ref n) if n.prev.borrow().is_none() => None,
-            _ => n.as_ref().map(|u| *u.x.borrow()),
+            _ => n.as_ref().map(|u| u.x.borrow().clone()),
         }
     }
 }
