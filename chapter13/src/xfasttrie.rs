@@ -13,8 +13,8 @@ pub struct BTNode<T: USizeV + Default> {
     child: [RefCell<Option<Rc<BTNode<T>>>>; 2], // 0 = left, 1 = right
     jump: RefCell<Option<Rc<BTNode<T>>>>,
     parent: RefCell<Option<Weak<BTNode<T>>>>,
-    prev: RefCell<Option<Weak<BTNode<T>>>>, // left
-    next: RefCell<Option<Rc<BTNode<T>>>>,   // right
+    prev: RefCell<Option<Weak<BTNode<T>>>>,   // left
+    pub next: RefCell<Option<Rc<BTNode<T>>>>, // right
 }
 
 impl<T: USizeV + Default> BTNode<T> {
@@ -78,7 +78,7 @@ impl<T: USizeV + Default> XFastTrie<T> {
             }
         }
         if l == Self::W {
-            return Some(u.clone())
+            return Some(u.clone());
         }
         let c = (ix >> (Self::W - l - 1)) & 1;
         let pred = if c == 1 {
@@ -98,6 +98,64 @@ impl<T: USizeV + Default> XFastTrie<T> {
             },
             _ => None,
         }
+    }
+    pub fn remove_node(&mut self, u: Rc<BTNode<T>>) -> Option<T> {
+        let ix = u.x.borrow().usize_value();
+        let mut c;
+        // 2 - remove u from linked list
+        let next = u.next.borrow_mut().take();
+        let prev = u.prev.borrow_mut().take();
+        if let Some(n) = next.as_ref() {
+            *n.prev.borrow_mut() = prev.clone();
+        }
+        if let Some(p) = prev.as_ref() {
+            *p.upgrade().unwrap().next.borrow_mut() = next.clone();
+        }
+        let mut v = u.clone();
+
+        // 3 - delete nodes on path to u
+        for i in (0..Self::W).rev() {
+            c = (ix >> (Self::W - i - 1)) & 1;
+            let vp = v
+                .parent
+                .borrow()
+                .as_ref()
+                .and_then(|p| p.upgrade())
+                .unwrap();
+            v = vp;
+            self.t[i + 1].remove(v.child[c].borrow_mut().take().as_ref().unwrap());
+            if v.child[1 - c].borrow().is_some() {
+                break;
+            }
+        }
+
+        // 4 - update jump pointers
+        c = if v.child[0].borrow().is_none() { 1 } else { 0 };
+        *v.jump.borrow_mut() = if c == 0 {
+            prev.as_ref().and_then(|p| p.upgrade())
+        } else {
+            next.clone()
+        };
+        let mut v = v.parent.borrow().as_ref().and_then(|p| p.upgrade());
+        while let Some(vi) = v {
+            if vi
+                .jump
+                .borrow()
+                .as_ref()
+                .filter(|j| Rc::ptr_eq(j, &u))
+                .is_some()
+            {
+                let c = if vi.child[0].borrow().is_none() { 1 } else { 0 };
+                *vi.jump.borrow_mut() = if c == 0 {
+                    prev.as_ref().and_then(|p| p.upgrade())
+                } else {
+                    next.clone()
+                };
+            }
+            v = vi.parent.borrow().as_ref().and_then(|p| p.upgrade());
+        }
+        self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
     }
 }
 
