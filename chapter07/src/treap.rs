@@ -231,19 +231,18 @@ where
         if let Some(ref r) = self.r {
             *r.parent.borrow_mut() = None;
         }
-        self.n = usize::MIN;
         let mut ret = Treap::<T>::new();
         ret.r = s.left.borrow_mut().take();
         if let Some(ref r) = ret.r {
             *r.parent.borrow_mut() = None;
         }
-        ret.n = usize::MIN;
+        ret.n = self.n;
         ret
     }
     pub fn absorb(&mut self, mut t: Treap<T>) {
         let s = Rc::new(TreapNode::<T>::new(Default::default()));
         *s.right.borrow_mut() = self.r.clone();
-        if let Some(ref r) = self.r.take() {
+        if let Some(r) = self.r.take() {
             r.parent.borrow_mut().replace(Rc::downgrade(&s));
         }
         *s.left.borrow_mut() = t.r.clone();
@@ -310,6 +309,8 @@ where
 mod test {
     use super::*;
     use chapter01::interface::SSet;
+    use chapter09::redblacktree::RedBlackTree;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_treap() {
         let mut treap = Treap::<u32>::new();
@@ -330,5 +331,37 @@ mod test {
         assert_eq!(Some(8), treap.remove(&8));
         assert_eq!(None, treap.remove(&8));
         //println!("{:?}", treap);
+        let mut rng = thread_rng();
+        let n = 200;
+        let mut redblacktree = RedBlackTree::<i32>::new();
+        let mut treap = Treap::<i32>::new();
+ 
+        for _ in 0..5 {
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                redblacktree.add(x);
+                treap.add(x);
+                assert_eq!(redblacktree.size(), treap.size());
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = treap.find(&x);
+                assert_eq!(y1, y2);
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let b1 = redblacktree.remove(&x);
+                let b2 = treap.remove(&x);
+                assert_eq!(b1, b2);
+            }
+            assert_eq!(redblacktree.size(), treap.size());
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = treap.find(&x);
+                assert_eq!(y1, y2);
+            }
+        }
     }
 }
