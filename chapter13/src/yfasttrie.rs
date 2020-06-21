@@ -35,7 +35,7 @@ where
     }
 }
 
-impl<T> YPair<T> 
+impl<T> YPair<T>
 where
     T: USizeV + Default + PartialOrd + Clone,
 {
@@ -53,6 +53,7 @@ where
     }
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct YFastTrie<T>
 where
     T: USizeV + Default + PartialOrd + Clone,
@@ -68,25 +69,21 @@ where
     const W: usize = 32;
     pub fn new() -> Self {
         let mut xft = XFastTrie::new();
-        xft.add(YPair::with_x((1<<Self::W)-1));
-        Self {
-            n: 0,
-            xft,
-        }
-
+        xft.add(YPair::with_x((1 << Self::W) - 1));
+        Self { n: 0, xft }
     }
 }
 
-impl<T> SSet<T> for YFastTrie<T> 
+impl<T> SSet<T> for YFastTrie<T>
 where
-    T: USizeV + Default + PartialOrd + Clone,
+    T: USizeV + Default + PartialOrd + Clone + std::fmt::Debug,
 {
     fn size(&self) -> usize {
         self.n
     }
     fn add(&mut self, x: T) -> bool {
         let ix = x.usize_value();
-        let mut t = self.xft.find(&YPair::with_x(ix)).map(|y| y.t.clone());
+        let mut t = self.xft.find(&YPair::with_x(ix)).map(|y| y.t);
         match t {
             Some(ref mut t) => {
                 if t.borrow_mut().add(x.clone()) {
@@ -99,15 +96,37 @@ where
                 } else {
                     false
                 }
-            },
-            None => false
+            }
+            None => false,
         }
     }
-    fn remove(&mut self, _: &T) -> std::option::Option<T> {
-        todo!()
+    fn remove(&mut self, x: &T) -> Option<T> {
+        let ix = x.usize_value();
+        let u = self.xft.find_node(ix);
+        let ret = match &u {
+            Some(u) => u.x.borrow().t.borrow_mut().remove(x),
+            None => None,
+        };
+        if ret.is_some() {
+            self.n -= 1;
+        }
+        if let Some(u) = u {
+            if u.x.borrow().ix == ix && ix != (1 << Self::W) - 1 {
+                if let Some(n) = u.next.borrow().as_ref() {
+                    n.x.borrow()
+                        .t
+                        .borrow_mut()
+                        .absorb(u.x.borrow().t.replace(Treap::new()));
+                }
+                self.xft.remove_node(u);
+            }
+        }
+        ret
     }
     fn find(&self, x: &T) -> Option<T> {
-        self.xft.find(&YPair::with_x(x.usize_value())).and_then(|y| y.t.borrow().find(&x))
+        self.xft
+            .find(&YPair::with_x(x.usize_value()))
+            .and_then(|y| y.t.borrow().find(&x))
     }
 }
 
@@ -123,14 +142,27 @@ mod test {
         let n = 200;
         let mut redblacktree = RedBlackTree::<i32>::new();
         let mut yfasttrie = YFastTrie::<i32>::new();
- 
-        for _ in 0..5 {
+
+        for _ in 0..2 {
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
                 redblacktree.add(x);
                 yfasttrie.add(x);
                 assert_eq!(redblacktree.size(), yfasttrie.size());
             }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = yfasttrie.find(&x);
+                assert_eq!(y1, y2);
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let b1 = redblacktree.remove(&x);
+                let b2 = yfasttrie.remove(&x);
+                assert_eq!(b1, b2);
+            }
+            assert_eq!(redblacktree.size(), yfasttrie.size());
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
                 let y1 = redblacktree.find(&x);

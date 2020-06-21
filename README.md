@@ -58,6 +58,6 @@ The following is a list of data structures that have been implemented in Rust.
 * chapter13 (Data Structures for Integers)
     * [BinaryTrie](/chapter13/src/binarytrie.rs)
     * [XFastTrie](/chapter13/src/xfasttrie.rs)
-    * YFastTrie(*coming soon*)
+    * [YFastTrie](/chapter13/src/yfasttrie.rs)
 * chapter14 (External Memory Searching)
     * BTree(*coming soon*)
