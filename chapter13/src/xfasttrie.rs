@@ -78,7 +78,7 @@ impl<T: USizeV + Default> XFastTrie<T> {
             }
         }
         if l == Self::W {
-            return Some(u.clone());
+            return Some(u);
         }
         let c = (ix >> (Self::W - l - 1)) & 1;
         let pred = if c == 1 {
