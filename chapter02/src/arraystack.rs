@@ -49,6 +49,12 @@ impl<T: PartialEq> Array<T> {
     }
 }
 
+impl<T: Clone> Array<T> {
+    pub fn take(&mut self, i: usize) -> Option<T> {
+        self.a.get_mut(i)?.take()
+    }
+}
+
 impl<T: Clone> List<T> for Array<T> {
     fn size(&self) -> usize {
         self.n
