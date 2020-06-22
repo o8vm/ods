@@ -335,7 +335,7 @@ mod test {
         let n = 200;
         let mut redblacktree = RedBlackTree::<i32>::new();
         let mut treap = Treap::<i32>::new();
- 
+
         for _ in 0..5 {
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
