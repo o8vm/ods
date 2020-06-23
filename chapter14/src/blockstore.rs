@@ -8,6 +8,12 @@ pub struct BlockStore<T: Clone> {
 }
 
 impl<T: Clone> BlockStore<T> {
+    pub fn new() -> Self {
+        Self {
+            blocks: ArrayStack::new(),
+            free: ArrayStack::new(),
+        }
+    }
     pub fn place_block(&mut self, block: T) -> usize {
         if self.free.size() > 0 {
             self.free.remove(self.free.size()).unwrap()
