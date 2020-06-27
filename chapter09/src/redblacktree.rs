@@ -275,7 +275,10 @@ impl<T: Ord + Clone> RedBlackTree<T> {
                 Some(ref u) if Rc::ptr_eq(u, self.r.as_ref().unwrap()) => {
                     *u.color.borrow_mut() = Color::Black;
                     color = Color::Black as isize;
-                }
+                },
+                None if self.r.is_none() => {
+                    color = Color::Black as isize;
+                },
                 _ => {
                     let left = p.as_ref().and_then(|p| p.left.borrow().clone());
                     match left {
@@ -663,5 +666,34 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
+        
+        let n = 3;
+        let mut redblacktree = RedBlackTree::<i32>::new();
+        let mut set: SkiplistSSet<i32> = SkiplistSSet::new();
+        for x in 0..n {
+            redblacktree.add(x);
+            set.add(x);
+            assert!(redblacktree.is_a_valid_red_black_tree());
+        }
+        assert_eq!(redblacktree.size(), set.size());
+        for x in 0..n {
+            let y1 = set.find(&x);
+            let y2 = redblacktree.find(&x);
+            assert_eq!(y1, y2);
+        }
+        for x in 0..2 {
+            let b1 = set.remove(&x);
+            let b2 = redblacktree.remove(&x);
+            assert_eq!(b1, b2);
+            assert!(redblacktree.is_a_valid_red_black_tree());
+        }
+        assert_eq!(redblacktree.size(), set.size());
+        for x in 0..n {
+            let y1 = set.find(&x);
+            let y2 = redblacktree.find(&x);
+            assert_eq!(y1, y2);
+        }
+        redblacktree.remove(&2);
+        assert!(redblacktree.is_a_valid_red_black_tree());
     }
 }
