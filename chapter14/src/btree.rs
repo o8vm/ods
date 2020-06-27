@@ -40,7 +40,7 @@ impl<T: Clone + PartialOrd> Node<T> {
         let mut hi = self.keys.len();
         while hi != lo {
             let m = (hi + lo) / 2;
-            if self.keys[m].is_some() {
+            if self.keys[m].is_none() {
                 hi = m;
             } else {
                 lo = m + 1;
@@ -95,8 +95,9 @@ impl<T: Clone + PartialOrd> Node<T> {
 
 impl<T: Clone + PartialOrd> BTree<T> {
     pub fn new(b: usize) -> Self {
+        let b = b + ((b + 1) % 2);
         let mut tree = Self {
-            b: b | 1,
+            b: b,
             B: b / 2,
             bs: BlockStore::new(),
             ri: 0,
@@ -146,9 +147,9 @@ impl<T: Clone + PartialOrd> BTree<T> {
             Err(())
         }
     }
-    fn merge(&mut self, u: &mut Node<T>, i: usize, w: &mut Node<T>, v: &mut Node<T>) {
-        assert_eq!(v.id, u.children[i]);
-        assert_eq!(w.id, u.children[i + 1]);
+    fn merge(&mut self, u: &mut Node<T>, i: usize, v: &mut Node<T>, w: &mut Node<T>) {
+        assert_eq!(v.id, u.children[i] as usize);
+        assert_eq!(w.id, u.children[i + 1] as usize);
         let sv = v.size();
         let sw = w.size();
         for (i, key) in w.keys[0..sw].iter_mut().enumerate() {
@@ -159,10 +160,19 @@ impl<T: Clone + PartialOrd> BTree<T> {
             *chd = -1;
         }
         v.keys[sv] = u.keys[i].take();
-        u.keys[(i + 1)..self.b].rotate_left(1);
+
+        for j in (i + 1)..self.b {
+            u.keys.swap(j - 1, j);
+        }
         u.keys[self.b - 1].take();
-        u.children[(i + 1)..(self.b + 1)].rotate_left(1);
+        for j in (i+2)..(self.b + 1) {
+            u.children.swap(j - 1, j);
+        }
         u.children[self.b] = -1;
+
+        self.bs.write_block(u.id, u.clone());
+        self.bs.write_block(v.id, v.clone());
+        self.bs.free_block(w.id);
     }
     fn shift_lr(&mut self, u: &mut Node<T>, i: usize, v: &mut Node<T>, w: &mut Node<T>) {
         let sv = v.size();
@@ -170,27 +180,31 @@ impl<T: Clone + PartialOrd> BTree<T> {
         let shift = (sw + sv) / 2 - sw; // num. keys to shift from v to w
 
         // make space for new keys
-        for (i, key) in w.keys[0..sw].iter_mut().enumerate() {
-            w.keys[shift + i] = key.take();
+        for i in 0..sw {
+            w.keys.swap(i, shift + i);
+            w.keys[i].take();
         }
-        for (i, chd) in w.children[0..(sw + 1)].iter_mut().enumerate() {
-            w.children[shift + i] = *chd;
-            *chd = -1;
+        for i in 0..(sw + 1) {
+            w.children.swap(i, shift + i);
+            w.children[i] = -1;
         }
 
         // move keys and children out of v and into w (and u)
         w.keys[shift - 1] = u.keys[i].take();
         u.keys[i] = v.keys[sv - shift].take();
-        for (i, key) in v.keys[(sv - shift - 1)..sv].iter_mut().enumerate() {
+        for (i, key) in v.keys[(sv - shift + 1)..sv].iter_mut().enumerate() {
             w.keys[i] = key.take();
         }
-        for (i, chd) in v.children[(sv - shift - 1)..(sv + 1)]
+        for (i, chd) in v.children[(sv - shift + 1)..(sv + 1)]
             .iter_mut()
             .enumerate()
         {
             w.children[i] = *chd;
             *chd = -1;
         }
+        self.bs.write_block(u.id, u.clone());
+        self.bs.write_block(v.id, v.clone());
+        self.bs.write_block(w.id, w.clone());
     }
     fn shift_rl(&mut self, u: &mut Node<T>, i: usize, v: &mut Node<T>, w: &mut Node<T>) {
         let sv = v.size();
@@ -209,29 +223,32 @@ impl<T: Clone + PartialOrd> BTree<T> {
         u.keys[i] = v.keys[shift - 1].take();
 
         // delete keys and children from v
-        for (i, key) in v.keys[shift..self.b].iter_mut().enumerate() {
-            v.keys[i] = key.take();
+        for i in 0..(self.b - shift) {
+            v.keys.swap(i, shift + i);
         }
         for key in v.keys[(sv - shift)..self.b].iter_mut() {
             key.take();
         }
-        for (i, chd) in v.children[shift..(self.b + 1)].iter_mut().enumerate() {
-            v.children[i] = *chd;
-            *chd = -1;
+        for i in 0..(self.b -shift + 1) {
+            v.children.swap(i, shift + i);
         }
         for chd in v.children[(sv - shift + 1)..(self.b + 1)].iter_mut() {
             *chd = -1;
         }
+        self.bs.write_block(u.id, u.clone());
+        self.bs.write_block(v.id, v.clone());
+        self.bs.write_block(w.id, w.clone());
     }
     fn check_underflow_zero(&mut self, u: &mut Node<T>, i: usize) {
         if let Some(ref mut w) = self.bs.read_block(u.children[i] as usize) {
             if w.size() < self.B - 1 {
-                if let Some(ref mut v) = self.bs.read_block(u.children[i - 1] as usize) {
+                if let Some(ref mut v) = self.bs.read_block(u.children[i + 1] as usize) {
                     if v.size() > self.B {
                         self.shift_rl(u, i, v, w);
                     } else {
                         self.merge(u, i, w, v);
                         u.children[i] = w.id as i32;
+                        self.bs.write_block(u.id, u.clone());
                     }
                 }
             }
@@ -252,7 +269,7 @@ impl<T: Clone + PartialOrd> BTree<T> {
     }
     fn check_underflow(&mut self, u: &mut Node<T>, i: usize) {
         if u.children[i] < 0 {
-            return
+            return;
         }
         if i == 0 {
             self.check_underflow_zero(u, i);
@@ -260,11 +277,56 @@ impl<T: Clone + PartialOrd> BTree<T> {
             self.check_underflow_nonzero(u, i);
         }
     }
-    fn remove_smallest() -> Option<T> {
-        todo!()
+    fn remove_smallest(&mut self, ui: i32) -> Option<T> {
+        let mut u = self.bs.read_block(ui as usize);
+        if let Some(ref mut u) = u {
+            if u.is_leaf() {
+                let y = u.remove(0);
+                self.bs.write_block(u.id, u.clone());
+                y
+            } else {
+                let y = self.remove_smallest(u.children[0]);
+                self.check_underflow(u, 0);
+                y
+            }
+        } else {
+            None
+        }
     }
-    fn remove_recursive() {
-        todo!()
+    fn remove_recursive(&mut self, x: &T, ui: i32) -> Option<T> {
+        if ui < 0 {
+            return None;
+        }
+        let mut u = self.bs.read_block(ui as usize);
+        match u {
+            Some(ref mut u) => {
+                let mut i = Self::find_it(&u.keys, x);
+                if i < 0 {
+                    i = -(i + 1);
+                    if u.is_leaf() {
+                        let y = u.remove(i as usize);
+                        self.bs.write_block(u.id, u.clone());
+                        y
+                    } else {
+                        let x = self.remove_smallest(u.children[i as usize + 1]);
+                        let y = u.keys[i as usize].take();
+                        u.keys[i as usize] = x;
+                        self.bs.write_block(u.id, u.clone());
+                        self.check_underflow(u, i as usize + 1);
+                        y
+                    }
+                } else {
+                    let y = self.remove_recursive(x, u.children[i as usize]);
+                    if y.is_some() {
+                        self.check_underflow(u, i as usize);
+                        y
+                    } else {
+                        None
+                    }
+                }
+            }
+            None => None,
+        }
     }
 }
 
@@ -295,7 +357,19 @@ where
         }
     }
     fn remove(&mut self, x: &T) -> Option<T> {
-        todo!()
+        match self.remove_recursive(x, self.ri as i32) {
+            Some(y) => {
+                self.n -= 1;
+                let r = self.bs.read_block(self.ri);
+                if let Some(r) = r {
+                    if r.size() == 0 && self.n > 0 {
+                        self.ri = r.children[0] as usize;
+                    }
+                }
+                Some(y)
+            },
+            None => None,
+        }
     }
     fn find(&self, x: &T) -> Option<T> {
         let mut z = None;
@@ -327,7 +401,7 @@ mod test {
         let n = 200;
         let mut redblacktree = RedBlackTree::<i32>::new();
         let mut btree = BTree::<i32>::new(11);
-
+        
         for _ in 0..5 {
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
@@ -335,6 +409,20 @@ mod test {
                 btree.add(x);
                 assert_eq!(redblacktree.size(), btree.size());
             }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = btree.find(&x);
+                assert_eq!(y1, y2);
+            }
+            for _ in 0..(n-1) {
+                let x = rng.gen_range(0, 5 * n);
+                let b1 = redblacktree.remove(&x);
+                let b2 = btree.remove(&x);
+                assert_eq!(b1, b2);
+                assert_eq!(redblacktree.size(), btree.size());
+            }
+            
             for _ in 0..n {
                 let x = rng.gen_range(0, 5 * n);
                 let y1 = redblacktree.find(&x);
