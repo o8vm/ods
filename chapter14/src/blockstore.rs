@@ -16,7 +16,7 @@ impl<T: Clone> BlockStore<T> {
     }
     pub fn place_block(&mut self, block: T) -> usize {
         if self.free.size() > 0 {
-            self.free.remove(self.free.size()).unwrap()
+            self.free.remove(self.free.size() - 1).unwrap()
         } else {
             let i = self.blocks.size();
             self.blocks.add(i, block);
