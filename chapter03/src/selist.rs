@@ -172,8 +172,7 @@ impl<T: Clone + Default> List<T> for SEList<T> {
         let mut r = 0;
         while r < self.b
             && u.as_ref()
-                .map(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
-                .filter(|b| b == &true)
+                .filter(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
                 .is_some()
             && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b + 1
         {
@@ -212,8 +211,7 @@ impl<T: Clone + Default> List<T> for SEList<T> {
         let mut r = 0;
         while r < self.b
             && u.as_ref()
-                .map(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
-                .filter(|b| b == &true)
+                .filter(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
                 .is_some()
             && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b - 1
         {
