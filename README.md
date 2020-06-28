@@ -60,4 +60,4 @@ The following is a list of data structures that have been implemented in Rust.
     * [XFastTrie](/chapter13/src/xfasttrie.rs)
     * [YFastTrie](/chapter13/src/yfasttrie.rs)
 * chapter14 (External Memory Searching)
-    * BTree(*coming soon*)
+    * [BTree](/chapter14/src/btree.rs)
