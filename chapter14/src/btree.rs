@@ -235,7 +235,7 @@ impl<T: Clone + PartialOrd> BTree<T> {
     }
     fn check_underflow_zero(&mut self, u: &mut Node<T>, i: usize) {
         if let Some(ref mut w) = self.bs.read_block(u.children[i] as usize) {
-            if w.size() < self.B {
+            if w.size() < self.B - 1 {
                 if let Some(ref mut v) = self.bs.read_block(u.children[i + 1] as usize) {
                     if v.size() > self.B {
                         self.shift_rl(u, i, v, w);
@@ -250,7 +250,7 @@ impl<T: Clone + PartialOrd> BTree<T> {
     }
     fn check_underflow_nonzero(&mut self, u: &mut Node<T>, i: usize) {
         if let Some(ref mut w) = self.bs.read_block(u.children[i] as usize) {
-            if w.size() < self.B {
+            if w.size() < self.B - 1 {
                 if let Some(ref mut v) = self.bs.read_block(u.children[i - 1] as usize) {
                     if v.size() > self.B {
                         self.shift_lr(u, i - 1, v, w);
