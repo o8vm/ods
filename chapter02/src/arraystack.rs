@@ -61,7 +61,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn get(&self, i: usize) -> Option<T> {
-        self.a.get(i)?.as_ref().and_then(|x| Some(x.clone()))
+        self.a.get(i)?.as_ref().map(|x| x.clone())
     }
 
     fn set(&mut self, i: usize, x: T) -> Option<T> {
