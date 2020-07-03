@@ -87,25 +87,28 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, i: usize) -> Option<T> {
-        assert!(i < self.n);
-        let x = self.a[(self.j + i) % self.length()].take();
-        if i < self.n / 2 {
-            for k in (1..=i).rev() {
-                self.a[(self.j + k) % self.length()] =
-                    self.a[(self.j + k - 1) % self.length()].take();
-            }
-            self.j = (self.j + 1) % self.length();
+        if !(i < self.n) {
+            None
         } else {
-            for k in i..self.n - 1 {
-                self.a[(self.j + k) % self.length()] =
-                    self.a[(self.j + k + 1) % self.length()].take();
+            let x = self.a[(self.j + i) % self.length()].take();
+            if i < self.n / 2 {
+                for k in (1..=i).rev() {
+                    self.a[(self.j + k) % self.length()] =
+                        self.a[(self.j + k - 1) % self.length()].take();
+                }
+                self.j = (self.j + 1) % self.length();
+            } else {
+                for k in i..self.n - 1 {
+                    self.a[(self.j + k) % self.length()] =
+                        self.a[(self.j + k + 1) % self.length()].take();
+                }
             }
+            self.n -= 1;
+            if self.length() > 3 * self.n {
+                self.resize();
+            }
+            x
         }
-        self.n -= 1;
-        if self.length() > 3 * self.n {
-            self.resize();
-        }
-        x
     }
 }
 
@@ -132,6 +135,13 @@ mod test {
         for (i, elem) in "bcxzd".chars().enumerate() {
             assert_eq!(array_deque.get(i), Some(elem));
         }
+        println!("\nArrayDeque = {:?}\n", array_deque);
+        let mut array_deque: Array<i32> = Array::new();
+        let num = 10;
+        for i in 0..num {
+            array_deque.add(array_deque.size(), i);
+        }
+        while array_deque.remove(0).is_some() {}
         println!("\nArrayDeque = {:?}\n", array_deque);
     }
 }

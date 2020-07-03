@@ -71,22 +71,25 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, i: usize) -> Option<T> {
-        assert!(i < self.n);
-        let x = self.a[(self.j + i) % self.length()].take();
-        if i < self.n / 2 {
-            for k in (1..=i).rev() {
-                self.a[(self.j + k) % self.length()] =
-                    self.a[(self.j + k - 1) % self.length()].take();
-            }
-            self.j = (self.j + 1) % self.length();
+        if !(i < self.n) {
+            None
         } else {
-            for k in i..self.n - 1 {
-                self.a[(self.j + k) % self.length()] =
-                    self.a[(self.j + k + 1) % self.length()].take();
+            let x = self.a[(self.j + i) % self.length()].take();
+            if i < self.n / 2 {
+                for k in (1..=i).rev() {
+                    self.a[(self.j + k) % self.length()] =
+                        self.a[(self.j + k - 1) % self.length()].take();
+                }
+                self.j = (self.j + 1) % self.length();
+            } else {
+                for k in i..self.n - 1 {
+                    self.a[(self.j + k) % self.length()] =
+                        self.a[(self.j + k + 1) % self.length()].take();
+                }
             }
+            self.n -= 1;
+            x
         }
-        self.n -= 1;
-        x
     }
 }
 
@@ -111,7 +114,8 @@ mod test {
         for (i, elem) in "bcxzd".chars().enumerate() {
             assert_eq!(bounded_deque.get(i), Some(elem));
         }
-        for _i in 0..5 {
+        //while bounded_deque.remove(0).is_some() {}
+        for _i in 0..6 {
             bounded_deque.remove(0);
         }
         println!("\nBDeque = {:?}\n", bounded_deque);
