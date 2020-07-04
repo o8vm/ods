@@ -85,10 +85,12 @@ impl<T: Clone> List<T> for Array<T> {
 
     fn remove(&mut self, i: usize) -> Option<T> {
         let x = self.a.get_mut(i)?.take();
-        self.a[i..self.n].rotate_left(1);
-        self.n -= 1;
-        if self.length() >= 3 * self.n {
-            self.resize();
+        if i < self.n {
+            self.a[i..self.n].rotate_left(1);
+            self.n -= 1;
+            if self.length() >= 3 * self.n {
+                self.resize();
+            }
         }
         x
     }
@@ -124,6 +126,13 @@ mod test {
             assert_eq!(array_stack.get(i), Some(elem));
         }
         assert_eq!(array_stack.get(4), None);
+        println!("\nArrayStack = {:?}\n", array_stack);
+        let mut array_stack: Array<i32> = Array::new();
+        let num = 10;
+        for i in 0..num {
+            array_stack.add(array_stack.size(), i);
+        }
+        while array_stack.remove(0).is_some() {}
         println!("\nArrayStack = {:?}\n", array_stack);
     }
 }

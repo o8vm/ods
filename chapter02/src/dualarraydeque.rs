@@ -101,5 +101,12 @@ mod test {
         assert_eq!(dual_array_deque.get(3), Some('y'));
         assert_eq!(dual_array_deque.get(4), Some('D'));
         println!("\nDualArrayDeque = {:?}\n", dual_array_deque);
+        let mut dual_array_deque: Array<i32> = Array::new();
+        let num = 10;
+        for i in 0..num {
+            dual_array_deque.add(dual_array_deque.size(), i);
+        }
+        while dual_array_deque.remove(0).is_some() {}
+        println!("\nDualArrayDeque = {:?}\n", dual_array_deque);
     }
 }
