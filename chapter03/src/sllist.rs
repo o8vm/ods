@@ -11,6 +11,12 @@ pub struct SLList<T> {
     n: usize,
 }
 
+impl<T> Drop for SLList<T> {
+    fn drop(&mut self) {
+        while self.remove().is_some() {}
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 struct Node<T> {
     x: T,
@@ -101,5 +107,20 @@ mod test {
             assert_eq!(sllist.remove(), Some(elem));
         }
         assert_eq!(sllist.pop(), None);
+
+        // test large linked list for stack overflow.
+        let mut sllist: SLList<i32> = SLList::new();
+        let num = 10;
+        for i in 0..num {
+            sllist.add(i);
+        }
+        while sllist.remove().is_some() {}
+        let mut sllist: SLList<i32> = SLList::new();
+        let num = 100000;
+        for i in 0..num {
+            sllist.add(i);
+        }
+        println!("fin");
+
     }
 }

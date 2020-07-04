@@ -8,11 +8,20 @@ type Wink<T> = Option<Weak<RefCell<Node<T>>>>;
 type Loc<T> = (Link<T>, usize);
 
 #[derive(Clone, Debug, Default)]
-pub struct SEList<T> {
+pub struct SEList<T: Clone + Default> {
     head: Link<T>,
     tail: Wink<T>,
     n: usize,
     b: usize,
+}
+
+impl<T> Drop for SEList<T>
+where
+    T: Clone + Default,
+{
+    fn drop(&mut self) {
+        while self.remove(0).is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -206,42 +215,46 @@ impl<T: Clone + Default> List<T> for SEList<T> {
     }
 
     fn remove(&mut self, i: usize) -> Option<T> {
-        let (mut u, j) = self.get_loc(i);
-        let v = u.clone();
-        let mut r = 0;
-        while r < self.b
-            && u.as_ref()
-                .filter(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
-                .is_some()
-            && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b - 1
-        {
-            u = u.and_then(|p| p.borrow().next.clone());
-            r += 1;
+        if self.n > 0 {
+            let (mut u, j) = self.get_loc(i);
+            let v = u.clone();
+            let mut r = 0;
+            while r < self.b
+                && u.as_ref()
+                    .filter(|p| p.borrow().next.is_some() && p.borrow().prev.is_some())
+                    .is_some()
+                && u.as_ref().map(|p| p.borrow().block.size()).unwrap() == self.b - 1
+            {
+                u = u.and_then(|p| p.borrow().next.clone());
+                r += 1;
+            }
+            if r == self.b {
+                self.gather(v.clone());
+            }
+            u = v.clone();
+            let x = u.as_ref().and_then(|p| p.borrow_mut().block.remove(j));
+            while u.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
+                && u.as_ref()
+                    .and_then(|p| p.borrow().next.clone())
+                    .and_then(|p| p.borrow().next.clone())
+                    .is_some()
+            {
+                u.clone().map(|p| {
+                    let l = p.borrow().next.clone();
+                    let s = p.borrow().block.size();
+                    let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
+                    p.borrow_mut().block.add(s, x);
+                });
+                u = u.and_then(|p| p.borrow().next.clone());
+            }
+            if u.as_ref().map(|p| p.borrow().block.size()).unwrap() == 0 {
+                self.remove_link(u);
+            }
+            self.n -= 1;
+            x
+        } else {
+            None
         }
-        if r == self.b {
-            self.gather(v.clone());
-        }
-        u = v.clone();
-        let x = u.as_ref().and_then(|p| p.borrow_mut().block.remove(j));
-        while u.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
-            && u.as_ref()
-                .and_then(|p| p.borrow().next.clone())
-                .and_then(|p| p.borrow().next.clone())
-                .is_some()
-        {
-            u.clone().map(|p| {
-                let l = p.borrow().next.clone();
-                let s = p.borrow().block.size();
-                let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
-                p.borrow_mut().block.add(s, x);
-            });
-            u = u.and_then(|p| p.borrow().next.clone());
-        }
-        if u.as_ref().map(|p| p.borrow().block.size()).unwrap() == 0 {
-            self.remove_link(u);
-        }
-        self.n -= 1;
-        x
     }
 }
 
@@ -340,5 +353,19 @@ mod test {
         selist.add(4, 'x');
         assert_eq!(selist.remove(4), Some('x'));
         println!("\nSEList = {:?}\n", selist);
+        let mut selist: SEList<i32> = SEList::new(3);
+        let num = 10;
+        for i in 0..num {
+            selist.add(selist.size(), i);
+        }
+        while selist.remove(0).is_some() {}
+        
+        // test large linked list for stack overflow.
+        let mut selist: SEList<i32> = SEList::new(3);
+        let num = 100000;
+        for i in 0..num {
+            selist.add(selist.size(), i);
+        }
+        println!("fin");
     }
 }

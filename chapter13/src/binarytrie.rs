@@ -21,14 +21,33 @@ impl<T: USizeV + Default> BTNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct BinaryTrie<T: USizeV + Default> {
+pub struct BinaryTrie<T: USizeV + Default + PartialOrd + Clone> {
     n: usize,
     r: Rc<BTNode<T>>,
     head: Option<Rc<BTNode<T>>>,   // dummy1
     tail: Option<Weak<BTNode<T>>>, // dummy2
 }
 
-impl<T: USizeV + Default> BinaryTrie<T> {
+impl<T: PartialOrd + Clone + Default + USizeV> Drop for BinaryTrie<T> {
+    fn drop(&mut self) {
+        loop {
+            match self.head.as_ref().and_then(|s| {
+                s.next
+                    .borrow()
+                    .as_ref()
+                    .filter(|n| n.next.borrow().is_some())
+                    .map(|n| n.x.borrow().clone())
+            }) {
+                Some(ref x) => {
+                    self.remove(x);
+                }
+                _ => break,
+            }
+        }
+    }
+}
+
+impl<T: USizeV + Default + PartialOrd + Clone> BinaryTrie<T> {
     const W: usize = 64;
     pub fn new() -> Self {
         let r = Rc::new(BTNode::new());
@@ -279,5 +298,13 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
+
+        // test large linked list for stack overflow.
+        let mut bst = BinaryTrie::<i32>::new();
+        let num = 100000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

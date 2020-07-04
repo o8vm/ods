@@ -12,10 +12,18 @@ pub struct BSTNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct ScapegoatTree<T> {
+pub struct ScapegoatTree<T: PartialOrd + Clone> {
     n: usize,
     q: usize,
     r: Option<Rc<BSTNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for ScapegoatTree<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> BSTNode<T> {
@@ -29,7 +37,7 @@ impl<T: Default> BSTNode<T> {
 
 impl<T> ScapegoatTree<T>
 where
-    T: Ord + Clone,
+    T: PartialOrd + Clone,
 {
     pub fn new() -> Self {
         Self {
@@ -242,7 +250,7 @@ where
 
 impl<T> SSet<T> for ScapegoatTree<T>
 where
-    T: Ord + Clone + Default,
+    T: PartialOrd + Clone + Default,
 {
     fn size(&self) -> usize {
         self.n
@@ -380,5 +388,13 @@ mod test {
         assert_eq!(Some(4), scapegoattree.remove(&4));
         assert_eq!(Some(1), scapegoattree.remove(&1));
         println!("{:?}", scapegoattree);
+
+        // test large linked list for stack overflow.
+        let mut bst = ScapegoatTree::<i32>::new();
+        let num = 100000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

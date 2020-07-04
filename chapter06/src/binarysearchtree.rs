@@ -13,9 +13,17 @@ pub struct BSTNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct BinarySearchTree<T> {
+pub struct BinarySearchTree<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<BSTNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for BinarySearchTree<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> BSTNode<T> {
@@ -27,7 +35,7 @@ impl<T: Default> BSTNode<T> {
     }
 }
 
-impl<T: Ord + Clone> BinarySearchTree<T> {
+impl<T: PartialOrd + Clone> BinarySearchTree<T> {
     pub fn new() -> Self {
         Self { n: 0, r: None }
     }
@@ -227,5 +235,13 @@ mod test {
         assert_eq!(Some(12), binarysearchtree.find(&12));
         assert_eq!(9, binarysearchtree.size());
         //println!("{:?}", binarysearchtree);
+
+        // test large linked list for stack overflow.
+        let mut bst = BinarySearchTree::<i32>::new();
+        let num = 10000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

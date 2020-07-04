@@ -5,10 +5,19 @@ use std::rc::Rc;
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SkiplistList<T> {
+pub struct SkiplistList<T: Clone + Default> {
     head: Link<T>,
     h: usize,
     n: usize,
+}
+
+impl<T> Drop for SkiplistList<T>
+where
+    T: Clone + Default,
+{
+    fn drop(&mut self) {
+        while self.remove(0).is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -28,9 +37,9 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Default> SkiplistList<T> {
-    pub fn new(h: usize) -> Self {
-        let sentinel = Node::new(Default::default(), h);
+impl<T: Default + Clone> SkiplistList<T> {
+    pub fn new() -> Self {
+        let sentinel = Node::new(Default::default(), 32);
         Self {
             head: Some(sentinel),
             h: 0,
@@ -167,7 +176,7 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
                             _ => break false,
                         };
                     };
-                    n.borrow_mut().length[r] -= 1;
+                    if n.borrow().length[r] > 0 { n.borrow_mut().length[r] -= 1; }
                     if removed {
                         del = n.borrow_mut().next[r].take();
                         del.as_ref().map(|del| {
@@ -181,7 +190,7 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
                                         sentinel.borrow_mut().next.pop();
                                         sentinel.borrow_mut().length.pop();
                                     });
-                                    self.h -= 1;
+                                    if self.h > 0 { self.h -= 1; }
                                 }
                             }
                         });
@@ -203,7 +212,7 @@ mod test {
     use chapter01::interface::List;
     #[test]
     fn test_skiplistlist() {
-        let mut skiplistlist: SkiplistList<char> = SkiplistList::new(5);
+        let mut skiplistlist: SkiplistList<char> = SkiplistList::new();
         skiplistlist.add(0, '0');
         skiplistlist.add(1, '1');
         skiplistlist.add(2, '2');
@@ -224,7 +233,7 @@ mod test {
                 _ => break,
             }
         }
-        let mut skiplistlist: SkiplistList<char> = SkiplistList::new(5);
+        let mut skiplistlist: SkiplistList<char> = SkiplistList::new();
         skiplistlist.add(0, '0');
         skiplistlist.add(1, '1');
         skiplistlist.add(2, '2');
@@ -239,5 +248,13 @@ mod test {
         assert_eq!(skiplistlist.get(3), Some('4'));
         assert_eq!(skiplistlist.get(4), Some('5'));
         assert_eq!(skiplistlist.get(5), Some('6'));
+
+        // test large linked list for stack overflow.
+        let mut skiplistlist: SkiplistList<u64> = SkiplistList::new();
+        let num = 100000;
+        for i in 0..num {
+            skiplistlist.add(skiplistlist.size(), i);
+        }
+        println!("fin");
     }
 }

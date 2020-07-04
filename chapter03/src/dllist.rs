@@ -6,10 +6,19 @@ type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 type Wink<T> = Option<Weak<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default)]
-pub struct DLList<T> {
+pub struct DLList<T: Clone + Default> {
     head: Link<T>,
     tail: Wink<T>,
     n: usize,
+}
+
+impl<T> Drop for DLList<T>
+where
+    T: Clone + Default,
+{
+    fn drop(&mut self) {
+        while self.remove(0).is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -29,7 +38,7 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Default> DLList<T> {
+impl<T: Default + Clone> DLList<T> {
     pub fn new() -> Self {
         let dummy1: Rc<RefCell<Node<T>>> = Default::default();
         let dummy2: Rc<RefCell<Node<T>>> = Default::default();
@@ -149,5 +158,19 @@ mod test {
         }
         assert_eq!(dllist.remove(0), None);
         assert_eq!(dllist.get(0), None);
+
+        // test large linked list for stack overflow.
+        let mut dllist: DLList<i32> = DLList::new();
+        let num = 10;
+        for i in 0..num {
+            dllist.add(dllist.size(), i);
+        }
+        while dllist.remove(0).is_some() {}
+        let mut dllist: DLList<i32> = DLList::new();
+        let num = 100000;
+        for i in 0..num {
+            dllist.add(dllist.size(), i);
+        }
+        println!("fin");
     }
 }

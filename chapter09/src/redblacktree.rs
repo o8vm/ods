@@ -27,9 +27,17 @@ pub struct RBTNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct RedBlackTree<T> {
+pub struct RedBlackTree<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<RBTNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for RedBlackTree<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> RBTNode<T> {
@@ -41,7 +49,7 @@ impl<T: Default> RBTNode<T> {
     }
 }
 
-impl<T: Ord + Clone> RedBlackTree<T> {
+impl<T: PartialOrd + Clone> RedBlackTree<T> {
     pub fn new() -> Self {
         Self { n: 0, r: None }
     }
@@ -489,7 +497,7 @@ impl<T: Ord + Clone> RedBlackTree<T> {
 
 impl<T> SSet<T> for RedBlackTree<T>
 where
-    T: Ord + Clone + Default,
+    T: PartialOrd + Clone + Default,
 {
     fn size(&self) -> usize {
         self.n
@@ -695,5 +703,13 @@ mod test {
         }
         redblacktree.remove(&2);
         assert!(redblacktree.is_a_valid_red_black_tree());
+
+        // test large linked list for stack overflow.
+        let mut bst = RedBlackTree::<i32>::new();
+        let num = 1000000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }
