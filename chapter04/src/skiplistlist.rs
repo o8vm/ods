@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -5,10 +6,19 @@ use std::rc::Rc;
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SkiplistList<T> {
+pub struct SkiplistList<T: Clone + Default> {
     head: Link<T>,
     h: usize,
     n: usize,
+}
+
+impl<T> Drop for SkiplistList<T>
+where
+    T: Clone + Default,
+{
+    fn drop(&mut self) {
+        while self.remove(0).is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -28,9 +38,9 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Default> SkiplistList<T> {
-    pub fn new(h: usize) -> Self {
-        let sentinel = Node::new(Default::default(), h);
+impl<T: Default + Clone> SkiplistList<T> {
+    pub fn new() -> Self {
+        let sentinel = Node::new(Default::default(), 32);
         Self {
             head: Some(sentinel),
             h: 0,
@@ -126,22 +136,22 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
         assert!(i <= self.size());
         let w = Node::new(x, Self::pick_height());
         if w.borrow().next.len() - 1 > self.h {
-            self.head
+            if let Some(sentinel) = self
+                .head
                 .as_ref()
                 .filter(|sentinel| sentinel.borrow().next.len() < w.borrow().next.len())
-                .map(|sentinel| {
-                    let height = sentinel.borrow().next.len();
-                    sentinel.borrow_mut().next.extend_from_slice(&vec![
-                        None;
-                        w.borrow().next.len()
-                            - height
-                    ]);
-                    sentinel.borrow_mut().length.extend_from_slice(&vec![
-                        0;
-                        w.borrow().length.len()
-                            - height
-                    ]);
-                });
+            {
+                let height = sentinel.borrow().next.len();
+                sentinel
+                    .borrow_mut()
+                    .next
+                    .extend_from_slice(&vec![None; w.borrow().next.len() - height]);
+                sentinel.borrow_mut().length.extend_from_slice(&vec![
+                    0;
+                    w.borrow().length.len()
+                        - height
+                ]);
+            }
             self.h = w.borrow().next.len() - 1;
         }
         self.add_node(i, w);
@@ -167,24 +177,26 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
                             _ => break false,
                         };
                     };
-                    n.borrow_mut().length[r] -= 1;
+                    if n.borrow().length[r] > 0 {
+                        n.borrow_mut().length[r] -= 1;
+                    }
                     if removed {
                         del = n.borrow_mut().next[r].take();
-                        del.as_ref().map(|del| {
+                        if let Some(del) = del.as_ref() {
                             let length = del.borrow().length[r];
                             if let Some(next) = del.borrow_mut().next[r].take() {
                                 n.borrow_mut().next[r] = Some(next);
                                 n.borrow_mut().length[r] += length;
-                            } else {
-                                if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
-                                    self.head.as_ref().map(|sentinel| {
-                                        sentinel.borrow_mut().next.pop();
-                                        sentinel.borrow_mut().length.pop();
-                                    });
+                            } else if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
+                                if let Some(sentinel) = self.head.as_ref() {
+                                    sentinel.borrow_mut().next.pop();
+                                    sentinel.borrow_mut().length.pop();
+                                }
+                                if self.h > 0 {
                                     self.h -= 1;
                                 }
                             }
-                        });
+                        }
                     }
                 }
                 del.map(|del| {
@@ -203,7 +215,7 @@ mod test {
     use chapter01::interface::List;
     #[test]
     fn test_skiplistlist() {
-        let mut skiplistlist: SkiplistList<char> = SkiplistList::new(5);
+        let mut skiplistlist: SkiplistList<char> = SkiplistList::new();
         skiplistlist.add(0, '0');
         skiplistlist.add(1, '1');
         skiplistlist.add(2, '2');
@@ -224,7 +236,7 @@ mod test {
                 _ => break,
             }
         }
-        let mut skiplistlist: SkiplistList<char> = SkiplistList::new(5);
+        let mut skiplistlist: SkiplistList<char> = SkiplistList::new();
         skiplistlist.add(0, '0');
         skiplistlist.add(1, '1');
         skiplistlist.add(2, '2');
@@ -239,5 +251,13 @@ mod test {
         assert_eq!(skiplistlist.get(3), Some('4'));
         assert_eq!(skiplistlist.get(4), Some('5'));
         assert_eq!(skiplistlist.get(5), Some('6'));
+
+        // test large linked list for stack overflow.
+        let mut skiplistlist: SkiplistList<u64> = SkiplistList::new();
+        let num = 100000;
+        for i in 0..num {
+            skiplistlist.add(skiplistlist.size(), i);
+        }
+        println!("fin");
     }
 }

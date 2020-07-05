@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::if_same_then_else)]
 pub fn mergesort<T: PartialOrd + Clone>(a: &mut [T]) {
     let mut w = a.to_vec();
     if a.len() > 1 {

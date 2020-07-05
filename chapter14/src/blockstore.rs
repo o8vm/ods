@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use chapter02::arraystack::Array as ArrayStack;
 

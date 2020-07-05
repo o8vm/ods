@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -6,10 +7,19 @@ type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 type Wink<T> = Option<Weak<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default)]
-pub struct DLList<T> {
+pub struct DLList<T: Clone + Default> {
     head: Link<T>,
     tail: Wink<T>,
     n: usize,
+}
+
+impl<T> Drop for DLList<T>
+where
+    T: Clone + Default,
+{
+    fn drop(&mut self) {
+        while self.remove(0).is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -29,7 +39,7 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Default> DLList<T> {
+impl<T: Default + Clone> DLList<T> {
     pub fn new() -> Self {
         let dummy1: Rc<RefCell<Node<T>>> = Default::default();
         let dummy2: Rc<RefCell<Node<T>>> = Default::default();
@@ -61,8 +71,9 @@ impl<T: Default> DLList<T> {
     fn add_before(&mut self, w: Link<T>, x: T) {
         let u = Node::new(x);
         u.borrow_mut().prev = w.as_ref().and_then(|p| p.borrow().prev.clone());
-        w.as_ref()
-            .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
+        if let Some(p) = w.as_ref() {
+            p.borrow_mut().prev = Some(Rc::downgrade(&u))
+        }
         u.borrow_mut().next = w;
         u.borrow()
             .prev
@@ -76,7 +87,9 @@ impl<T: Default> DLList<T> {
         let next = w.and_then(|p| p.borrow_mut().next.take());
         prev.as_ref()
             .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = next.clone()));
-        next.map(|p| p.borrow_mut().prev = prev);
+        if let Some(p) = next {
+            p.borrow_mut().prev = prev
+        }
         self.n -= 1;
     }
 }
@@ -149,5 +162,19 @@ mod test {
         }
         assert_eq!(dllist.remove(0), None);
         assert_eq!(dllist.get(0), None);
+
+        // test large linked list for stack overflow.
+        let mut dllist: DLList<i32> = DLList::new();
+        let num = 10;
+        for i in 0..num {
+            dllist.add(dllist.size(), i);
+        }
+        while dllist.remove(0).is_some() {}
+        let mut dllist: DLList<i32> = DLList::new();
+        let num = 100000;
+        for i in 0..num {
+            dllist.add(dllist.size(), i);
+        }
+        println!("fin");
     }
 }

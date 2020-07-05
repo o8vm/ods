@@ -6,12 +6,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
-struct YPair<T: USizeV + Default> {
+struct YPair<T: USizeV + Default + Clone + PartialOrd> {
     ix: usize,
     t: Rc<RefCell<Treap<T>>>,
 }
 
-impl<T: USizeV + Default> USizeV for YPair<T> {
+impl<T: USizeV + Default + Clone + PartialOrd> USizeV for YPair<T> {
     fn usize_value(&self) -> usize {
         self.ix
     }
@@ -170,5 +170,12 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
+        // test large linked list for stack overflow.
+        let mut bst = YFastTrie::<i32>::new();
+        let num = 100000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

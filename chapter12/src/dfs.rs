@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use super::adjacencylists::AdjacencyLists;
 use chapter01::interface::{Graph, Stack};
 use chapter03::sllist::SLList;
@@ -10,15 +11,21 @@ enum Color {
 }
 
 fn do_dfs(g: &AdjacencyLists, i: usize, c: &mut [Color]) {
-    c.get_mut(i).map(|e| *e = Color::Grey);
+    if let Some(e) = c.get_mut(i) {
+        *e = Color::Grey
+    }
     let edges = g.out_edges(i);
     for j in edges.into_iter() {
         if let Some(Color::White) = c.get(j) {
-            c.get_mut(j).map(|e| *e = Color::Grey);
+            if let Some(e) = c.get_mut(j) {
+                *e = Color::Grey
+            }
             do_dfs(g, j, c);
         }
     }
-    c.get_mut(i).map(|e| *e = Color::Black);
+    if let Some(e) = c.get_mut(i) {
+        *e = Color::Black
+    }
 }
 
 pub fn dfs(g: &AdjacencyLists, r: usize) {
@@ -32,7 +39,9 @@ pub fn dfs2(g: &AdjacencyLists, r: usize) {
     s.push(r);
     while let Some(i) = s.pop() {
         if let Some(Color::White) = c.get(i) {
-            c.get_mut(i).map(|e| *e = Color::Grey);
+            if let Some(e) = c.get_mut(i) {
+                *e = Color::Grey
+            }
             let edges = g.out_edges(i);
             for j in edges.into_iter() {
                 s.push(j);

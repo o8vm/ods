@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::Queue;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -13,9 +14,17 @@ pub struct MHNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MeldableHeap<T> {
+pub struct MeldableHeap<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<MHNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for MeldableHeap<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> MHNode<T> {
@@ -27,7 +36,7 @@ impl<T: Default> MHNode<T> {
     }
 }
 
-impl<T: Ord + Clone> MeldableHeap<T> {
+impl<T: PartialOrd + Clone> MeldableHeap<T> {
     pub fn new() -> Self {
         Self { n: 0, r: None }
     }
@@ -60,11 +69,50 @@ impl<T: Ord + Clone> MeldableHeap<T> {
     pub fn find_min(&self) -> Option<T> {
         self.r.as_ref().map(|r| r.x.borrow().clone())
     }
+    fn splice(&mut self, u: Rc<MHNode<T>>) -> Option<T> {
+        let s: Tree<T>;
+        let mut p: Tree<T> = None;
+        if u.left.borrow().is_some() {
+            s = u.left.borrow_mut().take();
+        } else {
+            s = u.right.borrow_mut().take();
+        }
+        if let Some(r) = &self.r {
+            if Rc::ptr_eq(&u, r) {
+                self.r = s.clone();
+                p = None;
+            } else {
+                p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
+                if let Some(p) = p.as_ref() {
+                    let left = p.left.borrow().clone();
+                    match left {
+                        Some(ref left) if Rc::ptr_eq(left, &u) => {
+                            *p.left.borrow_mut() = s.clone();
+                        }
+                        _ => {
+                            *p.right.borrow_mut() = s.clone();
+                        }
+                    }
+                }
+            }
+        }
+        match (s, p) {
+            (Some(ref s), Some(ref p)) => {
+                s.parent.borrow_mut().replace(Rc::downgrade(p));
+            }
+            (Some(ref s), None) => {
+                s.parent.borrow_mut().take();
+            }
+            _ => (),
+        }
+        self.n -= 1;
+        Some(Rc::try_unwrap(u).ok().unwrap().x.into_inner())
+    }
 }
 
 impl<T> Queue<T> for MeldableHeap<T>
 where
-    T: Ord + Clone + Default,
+    T: PartialOrd + Clone + Default,
 {
     fn add(&mut self, x: T) {
         let u = Rc::new(MHNode::new(x));
@@ -108,5 +156,13 @@ mod test {
         assert_eq!(meldableheap.n, 0);
         assert_eq!(meldableheap.remove(), None);
         println!("{:?}", meldableheap);
+
+        // test large linked list for stack overflow.
+        let mut bst = MeldableHeap::<i32>::new();
+        let num = 100000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

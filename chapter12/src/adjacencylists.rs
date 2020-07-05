@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::{Graph, List};
 use chapter02::arraystack::Array as ArrayStack;
 
@@ -45,7 +46,9 @@ impl Graph for AdjacencyLists {
         let mut edges = vec![];
         if let Some(e) = self.adj.get(i) {
             for k in 0..e.size() {
-                e.get(k).map(|u| edges.push(u));
+                if let Some(u) = e.get(k) {
+                    edges.push(u)
+                }
             }
         }
         edges
@@ -53,11 +56,11 @@ impl Graph for AdjacencyLists {
     fn in_edges(&self, i: usize) -> Vec<usize> {
         let mut edges = vec![];
         for j in 0..self.n {
-            self.adj.get(j).map(|e| {
+            if let Some(e) = self.adj.get(j) {
                 if e.contains(i) {
                     edges.push(j);
                 }
-            });
+            }
         }
         edges
     }

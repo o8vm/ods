@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -5,19 +6,31 @@ use std::rc::Rc;
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct SkiplistSSet<T: Ord> {
+pub struct SkiplistSSet<T: PartialOrd + Clone + Default> {
     head: Link<T>,
     h: usize,
     n: usize,
 }
 
+impl<T: PartialOrd + Clone + Default> Drop for SkiplistSSet<T> {
+    fn drop(&mut self) {
+        while let Some(ref x) = self
+            .head
+            .as_ref()
+            .and_then(|s| s.borrow().next[0].as_ref().map(|n| n.borrow().x.clone()))
+        {
+            self.remove(x);
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-struct Node<T: Ord> {
+struct Node<T: PartialOrd> {
     x: T,
     next: Vec<Link<T>>,
 }
 
-impl<T: Ord> Node<T> {
+impl<T: PartialOrd> Node<T> {
     fn new(x: T, h: usize) -> Rc<RefCell<Node<T>>> {
         Rc::new(RefCell::new(Node {
             x,
@@ -26,9 +39,9 @@ impl<T: Ord> Node<T> {
     }
 }
 
-impl<T: Ord + Default> SkiplistSSet<T> {
+impl<T: PartialOrd + Default + Clone> SkiplistSSet<T> {
     pub fn new() -> Self {
-        let sentinel = Node::new(Default::default(), 5);
+        let sentinel = Node::new(Default::default(), 32);
         Self {
             head: Some(sentinel),
             h: 0,
@@ -66,7 +79,7 @@ impl<T: Ord + Default> SkiplistSSet<T> {
     }
 }
 
-impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
+impl<T: PartialOrd + Clone + Default> SSet<T> for SkiplistSSet<T> {
     fn size(&self) -> usize {
         self.n
     }
@@ -88,13 +101,15 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                     stack[r] = Some(Rc::clone(&n));
                 }
                 let w = Node::new(x, Self::pick_height());
-                while self.h < w.borrow().next.len() - 1 {
-                    self.head
+                let height = w.borrow().next.len() - 1;
+                while self.h < height {
+                    if let Some(sentinel) = self
+                        .head
                         .as_ref()
                         .filter(|sentinel| sentinel.borrow().next.len() < w.borrow().next.len())
-                        .map(|sentinel| {
-                            sentinel.borrow_mut().next.push(None);
-                        });
+                    {
+                        sentinel.borrow_mut().next.push(None);
+                    }
                     self.h += 1;
                     if let Some(e) = stack.get_mut(self.h) {
                         e.replace(Rc::clone(sentinel));
@@ -102,15 +117,14 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                         stack.push(Some(Rc::clone(sentinel)));
                     }
                 }
-                let height = w.borrow().next.len() - 1;
-                for i in 0..=height {
-                    match stack[i].take() {
+                for (i, item) in stack.iter_mut().enumerate().take(height + 1) {
+                    match item.take() {
                         Some(ref u) => {
                             w.borrow_mut().next[i] = u.borrow_mut().next[i].take();
                             u.borrow_mut().next[i] = Some(Rc::clone(&w));
                         }
                         None => break,
-                    };
+                    }
                 }
                 self.n += 1;
                 true
@@ -136,17 +150,13 @@ impl<T: Ord + Clone + Default> SSet<T> for SkiplistSSet<T> {
                     };
                     if removed {
                         del = n.borrow_mut().next[r].take();
-                        del.as_ref().map(|del| {
+                        if let Some(del) = del.as_ref() {
                             if let Some(next) = del.borrow_mut().next[r].take() {
                                 n.borrow_mut().next[r] = Some(next);
-                            } else {
-                                if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
-                                    if self.h > 0 {
-                                        self.h -= 1;
-                                    }
-                                }
+                            } else if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) && self.h > 0 {
+                                self.h -= 1;
                             }
-                        });
+                        }
                     }
                 }
                 del.map(|del| {
@@ -215,5 +225,13 @@ mod test {
                 skiplistsset.remove(&x);
             }
         }
+
+        // test large linked list for stack overflow.
+        let mut skiplistsset: SkiplistSSet<u64> = SkiplistSSet::new();
+        let num = 100000;
+        for i in 0..num {
+            skiplistsset.add(i);
+        }
+        println!("fin");
     }
 }

@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 pub fn quicksort<T: PartialOrd + Clone>(a: &mut [T]) {
     do_sort(a, 0, a.len());
 }

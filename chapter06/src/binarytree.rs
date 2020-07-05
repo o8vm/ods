@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::List;
 use chapter02::arraydeque::Array as ArrayDeque;
 use std::cell::RefCell;
@@ -124,29 +125,24 @@ impl BinaryTree {
         let mut u = self.r.clone();
         let mut next: Option<Rc<BTNode>>;
         let mut prev: Option<Rc<BTNode>> = None;
-        loop {
-            match u {
-                Some(ref n) => {
-                    let parent = n.parent.borrow().as_ref().and_then(|p| p.upgrade());
-                    let left = n.left.borrow().clone();
-                    let right = n.right.borrow().clone();
-                    match (prev, parent, left, right) {
-                        (Some(p), Some(v), left, right) if Rc::ptr_eq(&p, &v) => {
-                            next = left.or(right).or(Some(p));
-                        }
-                        (None, None, left, right) => {
-                            next = left.or(right).or(None);
-                        }
-                        (Some(p), parent, Some(l), right) if Rc::ptr_eq(&p, &l) => {
-                            next = right.or(parent);
-                        }
-                        (None, parent, None, right) => {
-                            next = right.or(parent);
-                        }
-                        (_, parent, ..) => next = parent,
-                    }
+        while let Some(ref n) = u {
+            let parent = n.parent.borrow().as_ref().and_then(|p| p.upgrade());
+            let left = n.left.borrow().clone();
+            let right = n.right.borrow().clone();
+            match (prev, parent, left, right) {
+                (Some(p), Some(v), left, right) if Rc::ptr_eq(&p, &v) => {
+                    next = left.or(right).or(Some(p));
                 }
-                None => break,
+                (None, None, left, right) => {
+                    next = left.or(right).or(None);
+                }
+                (Some(p), parent, Some(l), right) if Rc::ptr_eq(&p, &l) => {
+                    next = right.or(parent);
+                }
+                (None, parent, None, right) => {
+                    next = right.or(parent);
+                }
+                (_, parent, ..) => next = parent,
             }
             prev = u;
             u = next;
@@ -155,7 +151,9 @@ impl BinaryTree {
 
     pub fn bf_traverse(&self) {
         let mut q: ArrayDeque<Rc<BTNode>> = ArrayDeque::new();
-        self.r.clone().map(|r| q.add(q.size(), r));
+        if let Some(r) = self.r.clone() {
+            q.add(q.size(), r)
+        }
         while q.size() > 0 {
             if let Some(u) = q.remove(q.size() - 1) {
                 if let Some(l) = u.left.borrow().as_ref() {

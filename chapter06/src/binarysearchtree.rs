@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -13,9 +14,17 @@ pub struct BSTNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct BinarySearchTree<T> {
+pub struct BinarySearchTree<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<BSTNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for BinarySearchTree<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> BSTNode<T> {
@@ -27,7 +36,7 @@ impl<T: Default> BSTNode<T> {
     }
 }
 
-impl<T: Ord + Clone> BinarySearchTree<T> {
+impl<T: PartialOrd + Clone> BinarySearchTree<T> {
     pub fn new() -> Self {
         Self { n: 0, r: None }
     }
@@ -112,7 +121,7 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
                 p = None;
             } else {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
-                p.as_ref().map(|p| {
+                if let Some(p) = p.as_ref() {
                     let left = p.left.borrow().clone();
                     match left {
                         Some(ref left) if Rc::ptr_eq(left, &u) => {
@@ -122,7 +131,7 @@ impl<T: Ord + Clone> BinarySearchTree<T> {
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
-                });
+                }
             }
         }
         match (s, p) {
@@ -227,5 +236,13 @@ mod test {
         assert_eq!(Some(12), binarysearchtree.find(&12));
         assert_eq!(9, binarysearchtree.size());
         //println!("{:?}", binarysearchtree);
+
+        // test large linked list for stack overflow.
+        let mut bst = BinarySearchTree::<i32>::new();
+        let num = 10000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

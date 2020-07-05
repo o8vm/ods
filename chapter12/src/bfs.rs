@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use super::adjacencylists::AdjacencyLists;
 use chapter01::interface::{Graph, Queue};
 use chapter03::sllist::SLList;
@@ -6,13 +7,17 @@ pub fn bfs(g: &AdjacencyLists, r: usize) {
     let mut seen = vec![false; g.nvertices()];
     let mut q = SLList::new();
     q.add(r);
-    seen.get_mut(r).map(|e| *e = true);
+    if let Some(e) = seen.get_mut(r) {
+        *e = true
+    }
     while let Some(i) = q.remove() {
         let edges = g.out_edges(i);
         for j in edges.into_iter() {
             if !seen[j] {
                 q.add(j);
-                seen.get_mut(j).map(|e| *e = true);
+                if let Some(e) = seen.get_mut(j) {
+                    *e = true
+                }
             }
         }
     }

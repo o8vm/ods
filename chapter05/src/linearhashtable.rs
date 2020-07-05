@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use super::{byte_chunks_64, Tabulation};
 use chapter01::interface::USet;
 use lazy_static::lazy_static;
@@ -7,8 +8,8 @@ use std::hash::Hash;
 lazy_static! {
     pub static ref TAB: [[u64; 256]; 8] = {
         let mut array = [[0; 256]; 8];
-        for i in 0..8 {
-            thread_rng().fill(&mut array[i]);
+        for item in &mut array {
+            thread_rng().fill(item);
         }
         array
     };
@@ -48,7 +49,7 @@ where
             d: 1,
         }
     }
-    fn allocate_in_heap<'a>(size: usize) -> Box<[Elem<T>]> {
+    fn allocate_in_heap(size: usize) -> Box<[Elem<T>]> {
         std::iter::repeat_with(|| Default::default())
             .take(size)
             .collect::<Vec<_>>()

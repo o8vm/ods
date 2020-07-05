@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::{Queue, Stack};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -9,6 +10,12 @@ pub struct SLList<T> {
     head: Link<T>,
     tail: Link<T>,
     n: usize,
+}
+
+impl<T> Drop for SLList<T> {
+    fn drop(&mut self) {
+        while self.remove().is_some() {}
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -40,7 +47,7 @@ impl<T> Stack<T> for SLList<T> {
     fn push(&mut self, x: T) {
         let new = Node::new(x);
         match self.head.take() {
-            Some(old) => new.borrow_mut().next = Some(old.clone()),
+            Some(old) => new.borrow_mut().next = Some(old),
             None => self.tail = Some(new.clone()),
         }
         self.n += 1;
@@ -101,5 +108,19 @@ mod test {
             assert_eq!(sllist.remove(), Some(elem));
         }
         assert_eq!(sllist.pop(), None);
+
+        // test large linked list for stack overflow.
+        let mut sllist: SLList<i32> = SLList::new();
+        let num = 10;
+        for i in 0..num {
+            sllist.add(i);
+        }
+        while sllist.remove().is_some() {}
+        let mut sllist: SLList<i32> = SLList::new();
+        let num = 100000;
+        for i in 0..num {
+            sllist.add(i);
+        }
+        println!("fin");
     }
 }

@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -14,9 +15,17 @@ pub struct TreapNode<T> {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Treap<T> {
+pub struct Treap<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<TreapNode<T>>>,
+}
+
+impl<T: PartialOrd + Clone> Drop for Treap<T> {
+    fn drop(&mut self) {
+        while let Some(r) = self.r.clone() {
+            self.splice(r);
+        }
+    }
 }
 
 impl<T: Default> TreapNode<T> {
@@ -363,5 +372,13 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
+
+        // test large linked list for stack overflow.
+        let mut bst = Treap::<i32>::new();
+        let num = 100000;
+        for i in 0..num {
+            bst.add(i);
+        }
+        println!("fin");
     }
 }

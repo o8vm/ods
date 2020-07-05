@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 pub fn countingsort(a: &mut [usize]) {
     let k = *a.iter().max().unwrap() + 1;
     let mut c = vec![0usize; k];
