@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::Queue;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -17,7 +18,6 @@ pub struct MeldableHeap<T: PartialOrd + Clone> {
     n: usize,
     r: Option<Rc<MHNode<T>>>,
 }
-
 
 impl<T: PartialOrd + Clone> Drop for MeldableHeap<T> {
     fn drop(&mut self) {
@@ -83,7 +83,7 @@ impl<T: PartialOrd + Clone> MeldableHeap<T> {
                 p = None;
             } else {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
-                p.as_ref().map(|p| {
+                if let Some(p) = p.as_ref() {
                     let left = p.left.borrow().clone();
                     match left {
                         Some(ref left) if Rc::ptr_eq(left, &u) => {
@@ -93,7 +93,7 @@ impl<T: PartialOrd + Clone> MeldableHeap<T> {
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
-                });
+                }
             }
         }
         match (s, p) {

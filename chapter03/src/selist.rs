@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use chapter02::boundeddeque::Array as BDeque;
 use std::cell::RefCell;
@@ -80,8 +81,9 @@ impl<T: Default + Clone> SEList<T> {
     fn add_before(&mut self, w: Link<T>) -> Link<T> {
         let u = Node::new(self.b);
         u.borrow_mut().prev = w.as_ref().and_then(|p| p.borrow().prev.clone());
-        w.as_ref()
-            .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
+        if let Some(p) = w.as_ref() {
+            p.borrow_mut().prev = Some(Rc::downgrade(&u))
+        }
         u.borrow_mut().next = w;
         u.borrow()
             .prev
@@ -95,7 +97,9 @@ impl<T: Default + Clone> SEList<T> {
         let next = w.and_then(|p| p.borrow_mut().next.take());
         prev.as_ref()
             .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = next.clone()));
-        next.map(|p| p.borrow_mut().prev = prev);
+        if let Some(p) = next {
+            p.borrow_mut().prev = prev
+        }
     }
 
     fn add_last(&mut self, x: T) {
@@ -108,11 +112,11 @@ impl<T: Default + Clone> SEList<T> {
             if p.borrow().prev.is_none() || p.borrow().block.size() == self.b + 1 {
                 last = self.add_before(self.tail.as_ref().and_then(|p| p.upgrade()));
             }
-            last.map(|p| {
+            if let Some(p) = last {
                 let s = p.borrow().block.size();
                 p.borrow_mut().block.add(s, x);
                 self.n += 1;
-            });
+            }
         }
     }
 
@@ -124,12 +128,12 @@ impl<T: Default + Clone> SEList<T> {
         w = self.add_before(w);
         while !Rc::ptr_eq(w.as_ref().unwrap(), u.as_ref().unwrap()) {
             while w.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b {
-                w.as_ref().map(|p| {
+                if let Some(p) = w.as_ref() {
                     let l = p.borrow().prev.as_ref().and_then(|p| p.upgrade());
                     let s = l.as_ref().map(|p| p.borrow().block.size()).unwrap();
                     let x = l.and_then(|p| p.borrow_mut().block.remove(s - 1)).unwrap();
                     p.borrow_mut().block.add(0, x);
-                });
+                }
             }
             w = w.and_then(|p| p.borrow().prev.as_ref().and_then(|p| p.upgrade()));
         }
@@ -138,12 +142,12 @@ impl<T: Default + Clone> SEList<T> {
         let mut w = u;
         for _j in 0..self.b - 1 {
             while w.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b {
-                w.as_ref().map(|p| {
+                if let Some(p) = w.as_ref() {
                     let l = p.borrow().next.clone();
                     let s = p.borrow().block.size();
                     let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
                     p.borrow_mut().block.add(s, x);
-                });
+                }
             }
             w = w.and_then(|p| p.borrow().next.clone());
         }
@@ -200,17 +204,19 @@ impl<T: Clone + Default> List<T> for SEList<T> {
             u = self.add_before(u);
         }
         while !Rc::ptr_eq(u.as_ref().unwrap(), v.as_ref().unwrap()) {
-            u.as_ref().map(|p| {
+            if let Some(p) = u.as_ref() {
                 let l = p.borrow().prev.as_ref().and_then(|p| p.upgrade());
                 let s = l.as_ref().map(|p| p.borrow().block.size()).unwrap();
                 let x = l.and_then(|p| p.borrow_mut().block.remove(s - 1)).unwrap();
                 p.borrow_mut().block.add(0, x);
-            });
+            };
             u = u
                 .and_then(|p| p.borrow().prev.clone())
                 .and_then(|p| p.upgrade());
         }
-        u.map(|p| p.borrow_mut().block.add(j, x));
+        if let Some(p) = u {
+            p.borrow_mut().block.add(j, x)
+        }
         self.n += 1;
     }
 
@@ -231,7 +237,7 @@ impl<T: Clone + Default> List<T> for SEList<T> {
             if r == self.b {
                 self.gather(v.clone());
             }
-            u = v.clone();
+            u = v;
             let x = u.as_ref().and_then(|p| p.borrow_mut().block.remove(j));
             while u.as_ref().map(|p| p.borrow().block.size()).unwrap() < self.b - 1
                 && u.as_ref()
@@ -239,12 +245,12 @@ impl<T: Clone + Default> List<T> for SEList<T> {
                     .and_then(|p| p.borrow().next.clone())
                     .is_some()
             {
-                u.clone().map(|p| {
+                if let Some(p) = u.clone() {
                     let l = p.borrow().next.clone();
                     let s = p.borrow().block.size();
                     let x = l.and_then(|p| p.borrow_mut().block.remove(0)).unwrap();
                     p.borrow_mut().block.add(s, x);
-                });
+                }
                 u = u.and_then(|p| p.borrow().next.clone());
             }
             if u.as_ref().map(|p| p.borrow().block.size()).unwrap() == 0 {
@@ -359,7 +365,7 @@ mod test {
             selist.add(selist.size(), i);
         }
         while selist.remove(0).is_some() {}
-        
+
         // test large linked list for stack overflow.
         let mut selist: SEList<i32> = SEList::new(3);
         let num = 100000;

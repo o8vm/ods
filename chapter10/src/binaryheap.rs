@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::Queue;
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -65,7 +66,7 @@ impl<T: PartialOrd> BinaryHeap<T> {
                     flag = true;
                 }
             }
-            if flag == true {
+            if flag {
                 self.a.swap(i, j);
                 i = j;
             } else {
@@ -94,7 +95,7 @@ impl<T: PartialOrd + Clone> BinaryHeap<T> {
                 .into_boxed_slice(),
             n: b.len(),
         };
-        for i in (0..=(std::cmp::max(bh.n / 2, 1) - 1)).rev() {
+        for i in (0..std::cmp::max(bh.n / 2, 1)).rev() {
             bh.trickle_down(i);
         }
         bh

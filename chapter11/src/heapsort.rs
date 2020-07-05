@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter10::binaryheap::BinaryHeap;
 
 pub fn heapsort<T: PartialOrd + Clone>(a: &mut [T]) {

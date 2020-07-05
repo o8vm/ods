@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use super::hashcode;
 use chapter01::interface::{List, USet};
 use chapter02::arraystack::Array as ArrayStack;
@@ -21,7 +22,7 @@ where
             t: Self::allocate_in_heap(2),
             n: 0,
             d: 1,
-            z: rand::random::<usize>() | 1, // ランダムな奇数
+            z: rand::random::<usize>() | 1,
         }
     }
     fn allocate_in_heap(size: usize) -> Box<[ArrayStack<T>]> {
@@ -38,7 +39,7 @@ where
         self.n = 0;
         let new_t = Self::allocate_in_heap(1 << self.d);
         let old_t = std::mem::replace(&mut self.t, new_t);
-        for ref mut elem in old_t.into_vec().into_iter() {
+        for elem in old_t.into_vec().iter_mut() {
             let len = elem.size();
             for _j in 0..len {
                 self.add(elem.remove(0).unwrap());
@@ -65,7 +66,9 @@ where
         if self.n + 1 > self.t.len() {
             self.resize();
         }
-        self.t.get_mut(self.hash(&x)).map(|t| t.add(t.size(), x));
+        if let Some(t) = self.t.get_mut(self.hash(&x)) {
+            t.add(t.size(), x)
+        }
         self.n += 1;
         true
     }

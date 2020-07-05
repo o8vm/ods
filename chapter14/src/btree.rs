@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use crate::blockstore::BlockStore;
 use chapter01::interface::SSet;
 

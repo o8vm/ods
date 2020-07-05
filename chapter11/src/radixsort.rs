@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 pub fn radixsort(a: &mut [usize]) {
     let d = 8;
     let w = 8 * std::mem::size_of::<usize>();
@@ -5,14 +6,14 @@ pub fn radixsort(a: &mut [usize]) {
         let mut c = vec![0usize; 1 << d];
         let mut b = vec![0usize; a.len()];
         for ai in a.iter() {
-            c[(*ai >> d * p) & ((1 << d) - 1)] += 1;
+            c[(*ai >> (d * p)) & ((1 << d) - 1)] += 1;
         }
         for i in 1..(1 << d) {
             c[i] += c[i - 1];
         }
         for ai in a.iter().rev() {
-            c[(*ai >> d * p) & ((1 << d) - 1)] -= 1;
-            b[c[(*ai >> d * p) & ((1 << d) - 1)]] = *ai;
+            c[(*ai >> (d * p)) & ((1 << d) - 1)] -= 1;
+            b[c[(*ai >> (d * p)) & ((1 << d) - 1)]] = *ai;
         }
         a.copy_from_slice(&b);
     }

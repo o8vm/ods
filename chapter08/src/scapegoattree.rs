@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -102,9 +103,9 @@ where
         match p {
             None => {
                 self.r = Self::build_balanced(&a, 0, ns);
-                self.r.as_ref().map(|r| {
+                if let Some(r) = self.r.as_ref() {
                     r.parent.borrow_mut().take();
-                });
+                }
             }
             Some(p) => {
                 let right = p.right.borrow().clone();
@@ -140,7 +141,7 @@ where
     }
     fn add_with_depth(&mut self, u: Rc<BSTNode<T>>) -> i64 {
         let mut w = self.r.clone();
-        if let None = w {
+        if w.is_none() {
             self.r = Some(u.clone());
         }
         let mut d = 0;
@@ -148,7 +149,7 @@ where
         loop {
             match w {
                 Some(ref w) => {
-                    if &*u.x.borrow() < &*w.x.borrow() {
+                    if *u.x.borrow() < *w.x.borrow() {
                         let left = w.left.borrow().clone();
                         match left {
                             None => {
@@ -158,7 +159,7 @@ where
                             }
                             Some(left) => next = Some(left.clone()),
                         }
-                    } else if &*u.x.borrow() > &*w.x.borrow() {
+                    } else if *u.x.borrow() > *w.x.borrow() {
                         let right = w.right.borrow().clone();
                         match right {
                             None => {
@@ -196,7 +197,7 @@ where
                 p = None;
             } else {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
-                p.as_ref().map(|p| {
+                if let Some(p) = p.as_ref() {
                     let left = p.left.borrow().clone();
                     match left {
                         Some(ref left) if Rc::ptr_eq(left, &u) => {
@@ -206,7 +207,7 @@ where
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
-                });
+                }
             }
         }
         match (s, p) {
@@ -275,10 +276,8 @@ where
             }
             self.rebuild(&wp);
             true
-        } else if d < 0 {
-            false
         } else {
-            true
+            d >= 0
         }
     }
     fn remove(&mut self, x: &T) -> Option<T> {
@@ -323,6 +322,8 @@ where
 mod test {
     use super::*;
     use chapter01::interface::SSet;
+    use chapter09::redblacktree::RedBlackTree;
+    use rand::{thread_rng, Rng};
     #[test]
     fn test_scapegoattree() {
         let mut scapegoattree = ScapegoatTree::<u32>::new();
@@ -388,6 +389,39 @@ mod test {
         assert_eq!(Some(4), scapegoattree.remove(&4));
         assert_eq!(Some(1), scapegoattree.remove(&1));
         println!("{:?}", scapegoattree);
+
+        let mut rng = thread_rng();
+        let n = 200;
+        let mut redblacktree = RedBlackTree::<i32>::new();
+        let mut scapegoattree = ScapegoatTree::<i32>::new();
+
+        for _ in 0..5 {
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                redblacktree.add(x);
+                scapegoattree.add(x);
+                assert_eq!(redblacktree.size(), scapegoattree.size());
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = scapegoattree.find(&x);
+                assert_eq!(y1, y2);
+            }
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let b1 = redblacktree.remove(&x);
+                let b2 = scapegoattree.remove(&x);
+                assert_eq!(b1, b2);
+            }
+            assert_eq!(redblacktree.size(), scapegoattree.size());
+            for _ in 0..n {
+                let x = rng.gen_range(0, 5 * n);
+                let y1 = redblacktree.find(&x);
+                let y2 = scapegoattree.find(&x);
+                assert_eq!(y1, y2);
+            }
+        }
 
         // test large linked list for stack overflow.
         let mut bst = ScapegoatTree::<i32>::new();

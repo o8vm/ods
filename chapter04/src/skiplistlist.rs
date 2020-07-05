@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -135,22 +136,22 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
         assert!(i <= self.size());
         let w = Node::new(x, Self::pick_height());
         if w.borrow().next.len() - 1 > self.h {
-            self.head
+            if let Some(sentinel) = self
+                .head
                 .as_ref()
                 .filter(|sentinel| sentinel.borrow().next.len() < w.borrow().next.len())
-                .map(|sentinel| {
-                    let height = sentinel.borrow().next.len();
-                    sentinel.borrow_mut().next.extend_from_slice(&vec![
-                        None;
-                        w.borrow().next.len()
-                            - height
-                    ]);
-                    sentinel.borrow_mut().length.extend_from_slice(&vec![
-                        0;
-                        w.borrow().length.len()
-                            - height
-                    ]);
-                });
+            {
+                let height = sentinel.borrow().next.len();
+                sentinel
+                    .borrow_mut()
+                    .next
+                    .extend_from_slice(&vec![None; w.borrow().next.len() - height]);
+                sentinel.borrow_mut().length.extend_from_slice(&vec![
+                    0;
+                    w.borrow().length.len()
+                        - height
+                ]);
+            }
             self.h = w.borrow().next.len() - 1;
         }
         self.add_node(i, w);
@@ -176,24 +177,26 @@ impl<T: Clone + Default> List<T> for SkiplistList<T> {
                             _ => break false,
                         };
                     };
-                    if n.borrow().length[r] > 0 { n.borrow_mut().length[r] -= 1; }
+                    if n.borrow().length[r] > 0 {
+                        n.borrow_mut().length[r] -= 1;
+                    }
                     if removed {
                         del = n.borrow_mut().next[r].take();
-                        del.as_ref().map(|del| {
+                        if let Some(del) = del.as_ref() {
                             let length = del.borrow().length[r];
                             if let Some(next) = del.borrow_mut().next[r].take() {
                                 n.borrow_mut().next[r] = Some(next);
                                 n.borrow_mut().length[r] += length;
-                            } else {
-                                if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
-                                    self.head.as_ref().map(|sentinel| {
-                                        sentinel.borrow_mut().next.pop();
-                                        sentinel.borrow_mut().length.pop();
-                                    });
-                                    if self.h > 0 { self.h -= 1; }
+                            } else if Rc::ptr_eq(&n, self.head.as_ref().unwrap()) {
+                                if let Some(sentinel) = self.head.as_ref() {
+                                    sentinel.borrow_mut().next.pop();
+                                    sentinel.borrow_mut().length.pop();
+                                }
+                                if self.h > 0 {
+                                    self.h -= 1;
                                 }
                             }
-                        });
+                        }
                     }
                 }
                 del.map(|del| {

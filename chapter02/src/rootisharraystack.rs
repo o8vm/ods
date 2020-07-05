@@ -9,6 +9,12 @@ pub struct Array<T> {
     n: usize,
 }
 
+impl<T: Clone> Default for Array<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Clone> Array<T> {
     pub fn new() -> Self {
         Self {

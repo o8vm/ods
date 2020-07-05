@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -19,7 +20,6 @@ pub struct Treap<T: PartialOrd + Clone> {
     r: Option<Rc<TreapNode<T>>>,
 }
 
-
 impl<T: PartialOrd + Clone> Drop for Treap<T> {
     fn drop(&mut self) {
         while let Some(r) = self.r.clone() {
@@ -27,7 +27,6 @@ impl<T: PartialOrd + Clone> Drop for Treap<T> {
         }
     }
 }
-
 
 impl<T: Default> TreapNode<T> {
     pub fn new(x: T) -> Self {

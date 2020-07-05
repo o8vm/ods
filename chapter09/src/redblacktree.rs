@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop, clippy::redundant_closure)]
 use chapter01::interface::SSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -78,7 +79,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
         let w = u.right.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
-        p.map(|p| {
+        if let Some(p) = p {
             let left = p.left.borrow().clone();
             match left {
                 Some(ref left) if Rc::ptr_eq(left, u) => {
@@ -88,7 +89,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
-        });
+        }
         *u.right.borrow_mut() = w.left.borrow_mut().take();
         if let Some(ref right) = *u.right.borrow() {
             right.parent.borrow_mut().replace(Rc::downgrade(u));
@@ -103,7 +104,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
         let w = u.left.borrow_mut().take().unwrap();
         *w.parent.borrow_mut() = u.parent.borrow_mut().take();
         let p = w.parent.borrow().as_ref().and_then(|p| p.upgrade());
-        p.map(|p| {
+        if let Some(p) = p {
             let left = p.left.borrow().clone();
             match left {
                 Some(ref left) if Rc::ptr_eq(left, u) => {
@@ -113,7 +114,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
                     p.right.borrow_mut().replace(w.clone());
                 }
             }
-        });
+        }
         *u.left.borrow_mut() = w.right.borrow_mut().take();
         if let Some(ref left) = *u.left.borrow() {
             left.parent.borrow_mut().replace(Rc::downgrade(u));
@@ -134,22 +135,22 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
             1 => Color::Black,
             _ => Color::WBlack,
         };
-        u.left.borrow().as_ref().map(|left| {
+        if let Some(left) = u.left.borrow().as_ref() {
             let lc = *left.color.borrow() as isize + 1;
             *left.color.borrow_mut() = match lc {
                 0 => Color::Red,
                 1 => Color::Black,
                 _ => Color::WBlack,
             };
-        });
-        u.right.borrow().as_ref().map(|right| {
+        }
+        if let Some(right) = u.right.borrow().as_ref() {
             let rc = *right.color.borrow() as isize + 1;
             *right.color.borrow_mut() = match rc {
                 0 => Color::Red,
                 1 => Color::Black,
                 _ => Color::WBlack,
             }
-        });
+        }
     }
     fn pull_black(u: &Rc<RBTNode<T>>) {
         let uc = *u.color.borrow() as isize + 1;
@@ -158,22 +159,22 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
             1 => Color::Black,
             _ => Color::WBlack,
         };
-        u.left.borrow().as_ref().map(|left| {
+        if let Some(left) = u.left.borrow().as_ref() {
             let lc = *left.color.borrow() as isize - 1;
             *left.color.borrow_mut() = match lc {
                 0 => Color::Red,
                 1 => Color::Black,
                 _ => Color::WBlack,
             };
-        });
-        u.right.borrow().as_ref().map(|right| {
+        }
+        if let Some(right) = u.right.borrow().as_ref() {
             let rc = *right.color.borrow() as isize - 1;
             *right.color.borrow_mut() = match rc {
                 0 => Color::Red,
                 1 => Color::Black,
                 _ => Color::WBlack,
             }
-        });
+        }
     }
     fn flip_left(&mut self, u: &Rc<RBTNode<T>>) {
         Self::swap_colors(u, u.right.borrow().as_ref().unwrap());
@@ -251,7 +252,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
                 p = None;
             } else {
                 p = u.parent.borrow_mut().take().and_then(|p| p.upgrade());
-                p.as_ref().map(|p| {
+                if let Some(p) = p.as_ref() {
                     let left = p.left.borrow().clone();
                     match left {
                         Some(ref left) if Rc::ptr_eq(left, &u) => {
@@ -261,7 +262,7 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
                             *p.right.borrow_mut() = s.clone();
                         }
                     }
-                });
+                }
             }
         }
         match (s, p) {
@@ -283,10 +284,10 @@ impl<T: PartialOrd + Clone> RedBlackTree<T> {
                 Some(ref u) if Rc::ptr_eq(u, self.r.as_ref().unwrap()) => {
                     *u.color.borrow_mut() = Color::Black;
                     color = Color::Black as isize;
-                },
+                }
                 None if self.r.is_none() => {
                     color = Color::Black as isize;
-                },
+                }
                 _ => {
                     let left = p.as_ref().and_then(|p| p.left.borrow().clone());
                     match left {
@@ -674,7 +675,7 @@ mod test {
                 assert_eq!(y1, y2);
             }
         }
-        
+
         let n = 3;
         let mut redblacktree = RedBlackTree::<i32>::new();
         let mut set: SkiplistSSet<i32> = SkiplistSSet::new();

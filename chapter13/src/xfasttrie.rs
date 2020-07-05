@@ -44,22 +44,16 @@ pub struct XFastTrie<T: USizeV + Default + PartialOrd + Clone> {
     t: Box<[LinearHashTable<Rc<BTNode<T>>>]>,
 }
 
-
 impl<T: PartialOrd + Clone + Default + USizeV> Drop for XFastTrie<T> {
     fn drop(&mut self) {
-        loop {
-            match self.head.as_ref().and_then(|s| {
-                s.next
-                    .borrow()
-                    .as_ref()
-                    .filter(|n| n.next.borrow().is_some())
-                    .map(|n| n.x.borrow().clone())
-            }) {
-                Some(ref x) => {
-                    self.remove(x);
-                }
-                _ => break,
-            }
+        while let Some(ref x) = self.head.as_ref().and_then(|s| {
+            s.next
+                .borrow()
+                .as_ref()
+                .filter(|n| n.next.borrow().is_some())
+                .map(|n| n.x.borrow().clone())
+        }) {
+            self.remove(x);
         }
     }
 }

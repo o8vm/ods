@@ -37,10 +37,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn get(&self, i: usize) -> Option<T> {
-        self.a
-            .get((self.j + i) % self.length())?
-            .as_ref()
-            .and_then(|x| Some(x.clone()))
+        self.a.get((self.j + i) % self.length())?.as_ref().cloned()
     }
 
     fn set(&mut self, i: usize, x: T) -> Option<T> {
@@ -71,7 +68,7 @@ impl<T: Clone> List<T> for Array<T> {
     }
 
     fn remove(&mut self, i: usize) -> Option<T> {
-        if !(i < self.n) {
+        if i >= self.n {
             None
         } else {
             let x = self.a[(self.j + i) % self.length()].take();

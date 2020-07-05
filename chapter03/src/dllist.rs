@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::List;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -70,8 +71,9 @@ impl<T: Default + Clone> DLList<T> {
     fn add_before(&mut self, w: Link<T>, x: T) {
         let u = Node::new(x);
         u.borrow_mut().prev = w.as_ref().and_then(|p| p.borrow().prev.clone());
-        w.as_ref()
-            .map(|p| p.borrow_mut().prev = Some(Rc::downgrade(&u)));
+        if let Some(p) = w.as_ref() {
+            p.borrow_mut().prev = Some(Rc::downgrade(&u))
+        }
         u.borrow_mut().next = w;
         u.borrow()
             .prev
@@ -85,7 +87,9 @@ impl<T: Default + Clone> DLList<T> {
         let next = w.and_then(|p| p.borrow_mut().next.take());
         prev.as_ref()
             .and_then(|p| p.upgrade().map(|p| p.borrow_mut().next = next.clone()));
-        next.map(|p| p.borrow_mut().prev = prev);
+        if let Some(p) = next {
+            p.borrow_mut().prev = prev
+        }
         self.n -= 1;
     }
 }

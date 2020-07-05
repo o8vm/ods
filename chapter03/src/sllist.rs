@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names,clippy::explicit_counter_loop)]
 use chapter01::interface::{Queue, Stack};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -46,7 +47,7 @@ impl<T> Stack<T> for SLList<T> {
     fn push(&mut self, x: T) {
         let new = Node::new(x);
         match self.head.take() {
-            Some(old) => new.borrow_mut().next = Some(old.clone()),
+            Some(old) => new.borrow_mut().next = Some(old),
             None => self.tail = Some(new.clone()),
         }
         self.n += 1;
@@ -121,6 +122,5 @@ mod test {
             sllist.add(i);
         }
         println!("fin");
-
     }
 }
